@@ -1,0 +1,5313 @@
+openapi: 3.0.0
+info:
+  title: Dinlr Online Order API
+  version: "1.0"
+  description: "OpenAPI specification for Dinlr Online Order API"
+servers:
+  - url: https://api.dinlr.com/v1
+    description: Dinlr API server
+  - url: https://backoffice.dinlr.com
+    description: Dinlr OAuth server
+security:
+  - bearerAuth: []
+paths:
+  # OAuth endpoints
+  /oauth/authorize:
+    get:
+      summary: Request Authorization Code
+      description: Restaurant authorizes application to access their data
+      servers:
+        - url: https://backoffice.dinlr.com
+      parameters:
+        - name: client_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Application client ID
+        - name: redirect_uri
+          in: query
+          required: true
+          schema:
+            type: string
+          description: URI to redirect after authorization
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+          description: State parameter for security
+      responses:
+        '302':
+          description: Redirect to redirect_uri with code or error
+      security: []
+      tags:
+        - OAuth
+  
+  /{restaurant_id}/oauth/token:
+    post:
+      summary: Request Access Token
+      description: Exchange authorization code for access token or refresh access token
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  description: Authorization code (for authorization_code grant)
+                client_id:
+                  type: string
+                  description: Application client ID
+                client_secret:
+                  type: string
+                  description: Application client secret
+                grant_type:
+                  type: string
+                  enum: [authorization_code, refresh_token]
+                  description: Grant type
+                refresh_token:
+                  type: string
+                  description: Refresh token (for refresh_token grant)
+              required: [client_id, client_secret, grant_type]
+      responses:
+        '200':
+          description: Access token response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+      security: []
+      tags:
+        - OAuth
+
+  # Restaurant Settings endpoints
+  /{restaurant_id}/onlineorder/restaurant:
+    get:
+      summary: View Restaurant
+      description: Returns details for the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          description: Restaurant identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response with restaurant details.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Restaurant'
+      tags:
+        - Restaurant Settings
+
+  /{restaurant_id}/onlineorder/locations:
+    get:
+      summary: Retrieve all Locations
+      description: Returns a list of all locations of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          description: Restaurant identifier
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show locations last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of locations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Location'
+      tags:
+        - Restaurant Settings
+
+  /{restaurant_id}/onlineorder/dining-options:
+    get:
+      summary: Retrieve all Dining Options
+      description: Returns a list of all dining options of the location.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: location_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Location identifier
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show dining options last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of dining options
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DiningOption'
+      tags:
+        - Restaurant Settings
+
+  /{restaurant_id}/onlineorder/payments:
+    get:
+      summary: Retrieve all Payment Methods
+      description: Returns a list of all payment methods of the location.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: location_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Location identifier
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show payment methods last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of payment methods
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PaymentMethod'
+      tags:
+        - Restaurant Settings
+
+  /{restaurant_id}/onlineorder/charges:
+    get:
+      summary: Retrieve all Charges
+      description: Returns a list of all charges of the location.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: location_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Location identifier
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show charges last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of charges
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Charge'
+      tags:
+        - Restaurant Settings
+
+  /{restaurant_id}/onlineorder/get-settings:
+    get:
+      summary: Retrieve Restaurant Settings (Deprecated)
+      description: This endpoint has been deprecated, these data will be accessible from their new endpoints.
+      deprecated: true
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+      responses:
+        '200':
+          description: Deprecated combined settings response
+          content:
+            application/json:
+              schema:
+                type: object
+      tags:
+        - Restaurant Settings
+
+  # Floorplans
+  /{restaurant_id}/onlineorder/floorplans:
+    get:
+      summary: Retrieve all Floorplans
+      description: Returns a list of all floorplans of the location.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: location_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Location identifier
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show floorplans last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of floorplans
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Floorplan'
+      tags:
+        - Floorplans
+
+  # Items
+  /{restaurant_id}/onlineorder/items:
+    get:
+      summary: Retrieve all Items
+      description: Returns a list of all items of the location.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: location_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Location identifier
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show items last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Item'
+      tags:
+        - Items
+
+  /{restaurant_id}/onlineorder/modifiers:
+    get:
+      summary: Retrieve all Modifiers
+      description: Returns a list of all modifiers of the location.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: location_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Location identifier
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show modifiers last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of modifiers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Modifier'
+      tags:
+        - Items
+
+  /{restaurant_id}/onlineorder/categories:
+    get:
+      summary: Retrieve all Categories
+      description: Returns a list of all categories of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show categories last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of categories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+      tags:
+        - Items
+
+  # Discounts & Promotions
+  /{restaurant_id}/onlineorder/discounts:
+    get:
+      summary: Retrieve all Discounts
+      description: Returns a list of all discounts of the location.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: location_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Location identifier
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show discounts last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of discounts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Discount'
+      tags:
+        - Discounts & Promotions
+
+  /{restaurant_id}/onlineorder/promotions:
+    get:
+      summary: Retrieve all Promotions
+      description: Returns a list of all promotions of the location.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: location_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Location identifier
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show promotions last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of promotions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Promotion'
+      tags:
+        - Discounts & Promotions
+
+  # Vouchers
+  /{restaurant_id}/onlineorder/vouchers:
+    get:
+      summary: Retrieve all Vouchers
+      description: Returns a list of all vouchers of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show vouchers last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of vouchers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Voucher'
+      tags:
+        - Vouchers
+    post:
+      summary: Create Voucher
+      description: Creates a new voucher for the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoucherInput'
+      responses:
+        '201':
+          description: Voucher created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Voucher'
+      tags:
+        - Vouchers
+
+  /{restaurant_id}/onlineorder/vouchers/search:
+    get:
+      summary: Search Voucher
+      description: Searches for vouchers of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: voucher_code
+          in: query
+          schema:
+            type: string
+          description: Show vouchers associated with the voucher code
+        - name: customer_id
+          in: query
+          schema:
+            type: string
+          description: Show vouchers associated with the customer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show vouchers last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of vouchers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Voucher'
+      tags:
+        - Vouchers
+
+  /{restaurant_id}/onlineorder/vouchers/{voucher_id}:
+    get:
+      summary: View Voucher
+      description: Returns details for a single voucher of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: voucher_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Voucher identifier
+      responses:
+        '200':
+          description: Voucher details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Voucher'
+      tags:
+        - Vouchers
+    put:
+      summary: Update Voucher
+      description: Updates a voucher of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: voucher_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Voucher identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoucherInput'
+      responses:
+        '200':
+          description: Voucher updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Voucher'
+      tags:
+        - Vouchers
+
+  # Online Menu
+  /{restaurant_id}/onlineorder/menu:
+    get:
+      summary: Retrieve all Menus
+      description: Returns a list of all menus of the location including the item data.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: location_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Location identifier
+      responses:
+        '200':
+          description: Menu data for the location
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      menus:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Menu'
+      tags:
+        - Online Menu
+
+  # Customers
+  /{restaurant_id}/onlineorder/customers:
+    get:
+      summary: Retrieve all Customers
+      description: Returns a list of all customers of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show customers last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of customers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Customer'
+      tags:
+        - Customers
+    post:
+      summary: Create Customer
+      description: Creates a new customer for the restaurant. Must provide at least one of reference, first_name, or last_name.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerInput'
+      responses:
+        '201':
+          description: Customer created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Customer'
+      tags:
+        - Customers
+
+  /{restaurant_id}/onlineorder/customers/search:
+    get:
+      summary: Search Customers
+      description: Searches for customers of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: reference
+          in: query
+          schema:
+            type: string
+          description: Show customers associated with the reference
+        - name: email
+          in: query
+          schema:
+            type: string
+          description: Show customers associated with the email
+        - name: phone
+          in: query
+          schema:
+            type: string
+          description: Show customers associated with the phone
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show customers last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of customers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Customer'
+      tags:
+        - Customers
+
+  /{restaurant_id}/onlineorder/customers/{customer_id}:
+    get:
+      summary: View Customer
+      description: Returns details for a single customer of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Customer identifier
+      responses:
+        '200':
+          description: Customer details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Customer'
+      tags:
+        - Customers
+    put:
+      summary: Update Customer
+      description: Updates a customer profile of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Customer identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerInput'
+      responses:
+        '200':
+          description: Customer updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Customer'
+      tags:
+        - Customers
+
+  /{restaurant_id}/onlineorder/customer-groups:
+    get:
+      summary: Retrieve all Customer Groups
+      description: Returns a list of all customer groups of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show customer groups last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of customer groups
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CustomerGroup'
+      tags:
+        - Customers
+
+  # Loyalty
+  /{restaurant_id}/onlineorder/loyalty/programs:
+    get:
+      summary: Retrieve all Loyalty Programs
+      description: Returns a list of all loyalty programs of the restaurant. Requires Dinlr Loyalty subscription.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show loyalty programs last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of loyalty programs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LoyaltyProgram'
+      tags:
+        - Loyalty
+
+  /{restaurant_id}/onlineorder/loyalty/{loyalty_program_id}/rewards:
+    get:
+      summary: Retrieve all Rewards
+      description: Returns a list of all rewards in the loyalty program of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: loyalty_program_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Loyalty program identifier
+      responses:
+        '200':
+          description: A JSON array of loyalty rewards
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LoyaltyReward'
+      tags:
+        - Loyalty
+
+  /{restaurant_id}/onlineorder/loyalty/{loyalty_program_id}/members:
+    get:
+      summary: Retrieve all Members
+      description: Returns a list of all members in the loyalty program of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: loyalty_program_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Loyalty program identifier
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show members last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of loyalty members
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LoyaltyMember'
+      tags:
+        - Loyalty
+    post:
+      summary: Enrol Member
+      description: Creates a new member in the loyalty program of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: loyalty_program_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Loyalty program identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                customer:
+                  type: string
+                  description: Customer ID
+              required:
+                - customer
+      responses:
+        '201':
+          description: Member enrolled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/LoyaltyMember'
+      tags:
+        - Loyalty
+
+  /{restaurant_id}/onlineorder/loyalty/{loyalty_program_id}/members/{member_id}:
+    get:
+      summary: View Member
+      description: Returns details for a single member in the loyalty program of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: loyalty_program_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Loyalty program identifier
+        - name: member_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Member identifier
+      responses:
+        '200':
+          description: Member details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/LoyaltyMember'
+      tags:
+        - Loyalty
+
+  /{restaurant_id}/onlineorder/loyalty/{loyalty_program_id}/transactions:
+    post:
+      summary: Create Loyalty Transactions
+      description: Adds points to or subtracts points from a member in the loyalty program of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: loyalty_program_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Loyalty program identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoyaltyTransactionInput'
+      responses:
+        '201':
+          description: Transaction created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/LoyaltyTransaction'
+      tags:
+        - Loyalty
+
+  /{restaurant_id}/onlineorder/loyalty/{loyalty_program_id}/transactions/search:
+    get:
+      summary: Search Loyalty Transactions
+      description: Searches for transactions for the loyalty program of the restaurant. Results are sorted by created_at in descending order.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: loyalty_program_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Loyalty program identifier
+        - name: location_id
+          in: query
+          schema:
+            type: string
+          description: Show transactions associated with the location
+        - name: order_id
+          in: query
+          schema:
+            type: string
+          description: Show transactions associated with the order
+        - name: member_id
+          in: query
+          schema:
+            type: string
+          description: Show transactions associated with the member
+        - name: app_id
+          in: query
+          schema:
+            type: string
+          description: Show transactions associated with the app (Set as current to show orders placed by the app currently calling the API)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: created_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show transactions last created after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of loyalty transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/LoyaltyTransaction'
+      tags:
+        - Loyalty
+
+  # Store Credit
+  /{restaurant_id}/onlineorder/store-credit/customers/{customer_id}:
+    get:
+      summary: Retrieve Customer Store Credit
+      description: Returns store credit for a single customer of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: customer_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Customer identifier
+      responses:
+        '200':
+          description: Customer store credit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/StoreCredit'
+      tags:
+        - Store Credit
+
+  /{restaurant_id}/onlineorder/store-credit/transactions:
+    post:
+      summary: Create Store Credit Transaction
+      description: Adds store credit to or subtracts store credit from a customer of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreCreditTransactionInput'
+      responses:
+        '201':
+          description: Transaction created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/StoreCreditTransaction'
+      tags:
+        - Store Credit
+
+  /{restaurant_id}/onlineorder/store-credit/transactions/search:
+    get:
+      summary: Search Store Credit Transactions
+      description: Searches for store credit transactions of the restaurant. Results are sorted by created_at in descending order.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: location_id
+          in: query
+          schema:
+            type: string
+          description: Show transactions associated with the location
+        - name: order_id
+          in: query
+          schema:
+            type: string
+          description: Show transactions associated with the order
+        - name: customer_id
+          in: query
+          schema:
+            type: string
+          description: Show transactions associated with the customer
+        - name: app_id
+          in: query
+          schema:
+            type: string
+          description: Show transactions associated with the app (Set as current to show orders placed by the app currently calling the API)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: created_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show transactions last created after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of store credit transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StoreCreditTransaction'
+      tags:
+        - Store Credit
+
+  /{restaurant_id}/onlineorder/store-credit/topups:
+    post:
+      summary: Top Up Store Credit
+      description: Top up store credit to a customer of the restaurant. Store credit transaction will be created automatically after topping up to reflect the transaction.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreCreditTopupInput'
+      responses:
+        '201':
+          description: Topup created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/StoreCreditTopup'
+      tags:
+        - Store Credit
+
+  # Place Order
+  /{restaurant_id}/onlineorder/cart/calculate:
+    post:
+      summary: Cart Summary
+      description: Preview order pricing without creating an order.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartInput'
+      responses:
+        '200':
+          description: Cart summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CartSummary'
+      tags:
+        - Place Order
+
+  /{restaurant_id}/onlineorder/cart/submit:
+    post:
+      summary: Place Order
+      description: Creates a new order that can include information about items for purchase and settings to apply to the order.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartInput'
+      responses:
+        '201':
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+      tags:
+        - Place Order
+
+  # Manage Order
+  /{restaurant_id}/onlineorder/orders:
+    get:
+      summary: List Orders
+      description: Returns a list of all orders of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: app_id
+          in: query
+          schema:
+            type: string
+          description: Show orders placed by a certain app (Set as current to show orders placed by the app currently calling the API)
+        - name: location_id
+          in: query
+          schema:
+            type: string
+          description: Show orders associated with the location
+        - name: ids
+          in: query
+          schema:
+            type: string
+          description: Show orders specified by a comma-separated list of order IDs
+        - name: order_no
+          in: query
+          schema:
+            type: string
+          description: Show orders with specific order no only
+        - name: customer_id
+          in: query
+          schema:
+            type: string
+          description: Show orders associated with the customer
+        - name: detail
+          in: query
+          schema:
+            type: string
+            enum: [all]
+          description: Show order details (Set as all for full order details similar to View Order)
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50, max: 100 if detail=all)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show orders last updated after date (Remember to escape + sign with %2B)
+        - name: created_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show orders created at or after date (Remember to escape + sign with %2B) - Used together with created_at_max, maximum date range: 32 days
+        - name: created_at_max
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show orders created at or before date (Remember to escape + sign with %2B) - Used together with created_at_min, maximum date range: 32 days
+      responses:
+        '200':
+          description: A JSON array of orders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/OrderSummary'
+                        - $ref: '#/components/schemas/Order'
+      tags:
+        - Manage Order
+
+  /{restaurant_id}/onlineorder/orders/{order_id}:
+    get:
+      summary: View Order
+      description: Returns details for a single order of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order identifier
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+      tags:
+        - Manage Order
+    put:
+      summary: Update Order
+      description: Updates an open order by adding, replacing, or deleting fields.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderUpdateInput'
+      responses:
+        '200':
+          description: Order updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+      tags:
+        - Manage Order
+
+  /{restaurant_id}/onlineorder/orders/{order_id}/payments:
+    post:
+      summary: Create Order Payment
+      description: Creates a new payment for the order.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentInput'
+      responses:
+        '201':
+          description: Payment created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+      tags:
+        - Manage Order
+
+  /{restaurant_id}/onlineorder/orders/{order_id}/refunds:
+    post:
+      summary: Create Order Refund
+      description: Creates a new refund for the order.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefundInput'
+      responses:
+        '201':
+          description: Refund created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+      tags:
+        - Manage Order
+
+  /{restaurant_id}/onlineorder/orders/{order_id}/close:
+    post:
+      summary: Close Order
+      description: Closes an order.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order identifier
+      responses:
+        '200':
+          description: Order closed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+      tags:
+        - Manage Order
+
+  /{restaurant_id}/onlineorder/orders/{order_id}/open:
+    post:
+      summary: Re-open Order
+      description: Re-opens an order.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order identifier
+      responses:
+        '200':
+          description: Order re-opened successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+      tags:
+        - Manage Order
+
+  /{restaurant_id}/onlineorder/orders/{order_id}/cancel:
+    post:
+      summary: Cancel Order
+      description: Cancels an order. Cannot be performed on orders with transactions (payments or refunds).
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order identifier
+      responses:
+        '200':
+          description: Order cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+      tags:
+        - Manage Order
+
+  /{restaurant_id}/onlineorder/orders/{order_id}/pending:
+    post:
+      summary: Set Order Pending
+      description: Set order as pending.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order identifier
+      responses:
+        '200':
+          description: Order status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+      tags:
+        - Manage Order
+
+  /{restaurant_id}/onlineorder/orders/{order_id}/pending_payment:
+    post:
+      summary: Set Order Pending Payment
+      description: Set order as pending payment (Waiting for payment).
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order identifier
+      responses:
+        '200':
+          description: Order status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Order'
+      tags:
+        - Manage Order
+
+  # Order Item Kitchen Status
+  /{restaurant_id}/onlineorder/orders/{order_id}/order_items/{order_item_id}/kitchen/pending:
+    post:
+      summary: Set Order Item Kitchen Status to Pending
+      description: Set order item kitchen status as pending (in preparation). Requires Dinlr KDS subscription.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order identifier
+        - name: order_item_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order item identifier
+      responses:
+        '204':
+          description: Status updated successfully
+      tags:
+        - Manage Order
+
+  /{restaurant_id}/onlineorder/orders/{order_id}/order_items/{order_item_id}/kitchen/fulfill:
+    post:
+      summary: Set Order Item Kitchen Status to Fulfilled
+      description: Set order item kitchen status as fulfilled (ready). Requires Dinlr KDS subscription.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order identifier
+        - name: order_item_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order item identifier
+      responses:
+        '204':
+          description: Status updated successfully
+      tags:
+        - Manage Order
+
+  /{restaurant_id}/onlineorder/orders/{order_id}/order_items/{order_item_id}/kitchen/default:
+    post:
+      summary: Set Order Item Kitchen Status to Default
+      description: Set order item kitchen status as default. Requires Dinlr KDS subscription.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order identifier
+        - name: order_item_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order item identifier
+      responses:
+        '204':
+          description: Status updated successfully
+      tags:
+        - Manage Order
+
+  # Order Item Expedite Status
+  /{restaurant_id}/onlineorder/orders/{order_id}/order_items/{order_item_id}/expedite/pending:
+    post:
+      summary: Set Order Item Expedite Status to Pending
+      description: Set order item expedite status as pending (on the way). Requires Dinlr KDS subscription.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order identifier
+        - name: order_item_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order item identifier
+      responses:
+        '204':
+          description: Status updated successfully
+      tags:
+        - Manage Order
+
+  /{restaurant_id}/onlineorder/orders/{order_id}/order_items/{order_item_id}/expedite/expedite:
+    post:
+      summary: Set Order Item Expedite Status to Expedited
+      description: Set order item expedite status as expedited (served). Requires Dinlr KDS subscription.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order identifier
+        - name: order_item_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order item identifier
+      responses:
+        '204':
+          description: Status updated successfully
+      tags:
+        - Manage Order
+
+  /{restaurant_id}/onlineorder/orders/{order_id}/order_items/{order_item_id}/expedite/default:
+    post:
+      summary: Set Order Item Expedite Status to Default
+      description: Set order item expedite status as default. Requires Dinlr KDS subscription.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: order_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order identifier
+        - name: order_item_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Order item identifier
+      responses:
+        '204':
+          description: Status updated successfully
+      tags:
+        - Manage Order
+
+  # Reservations
+  /{restaurant_id}/onlineorder/experiences:
+    get:
+      summary: Retrieve all Experiences
+      description: Returns a list of all experiences of the location. Requires Dinlr Reservation subscription.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: location_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Location identifier
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show experiences last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of experiences
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Experience'
+      tags:
+        - Reservations
+
+  /{restaurant_id}/onlineorder/table-sections:
+    get:
+      summary: Retrieve all Table Sections
+      description: Returns a list of all table sections of the location. Requires Dinlr Reservation subscription.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: location_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Location identifier
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show table sections last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of table sections
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TableSection'
+      tags:
+        - Reservations
+
+  /{restaurant_id}/onlineorder/services:
+    get:
+      summary: Get Available Reservation Times
+      description: Returns a list of all available reservation times and services on a specific date for the location. Requires Dinlr Reservation subscription.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: location_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Location identifier
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Date for reservation, format is YYYY-mm-dd
+        - name: adult
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Number of adults
+        - name: children
+          in: query
+          required: true
+          schema:
+            type: integer
+          description: Number of children
+      responses:
+        '200':
+          description: Available services and times
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Service'
+      tags:
+        - Reservations
+
+  /{restaurant_id}/onlineorder/reservations:
+    get:
+      summary: List Reservation
+      description: Returns a list of all reservations of the restaurant. Requires Dinlr Reservation subscription.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: app_id
+          in: query
+          schema:
+            type: string
+          description: Show reservations booked by a certain app (Set as current to show reservations booked by the app currently calling the API)
+        - name: location_id
+          in: query
+          schema:
+            type: string
+          description: Show reservations associated with the location
+        - name: reservation_no
+          in: query
+          schema:
+            type: string
+          description: Show reservations with specific reservation no only
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show reservations last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of reservations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReservationSummary'
+      tags:
+        - Reservations
+    post:
+      summary: Book a Reservation
+      description: Books a new reservation for the location. Requires Dinlr Reservation subscription.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationInput'
+      responses:
+        '201':
+          description: Reservation created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Reservation'
+      tags:
+        - Reservations
+
+  /{restaurant_id}/onlineorder/reservations/{reservation_id}:
+    get:
+      summary: View Reservation
+      description: Returns details for a single reservation of the restaurant. Requires Dinlr Reservation subscription.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: reservation_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Reservation identifier
+      responses:
+        '200':
+          description: Reservation details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Reservation'
+      tags:
+        - Reservations
+    put:
+      summary: Update Reservation
+      description: Updates a reservation by adding, replacing, or deleting fields. Requires Dinlr Reservation subscription.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: reservation_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Reservation identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationUpdateInput'
+      responses:
+        '200':
+          description: Reservation updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Reservation'
+      tags:
+        - Reservations
+
+  # Inventory
+  /{restaurant_id}/onlineorder/materials:
+    get:
+      summary: Retrieve all Materials
+      description: Returns a list of all materials of the location.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: location_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Location identifier
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show materials last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of materials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Material'
+      tags:
+        - Inventory
+
+  /{restaurant_id}/onlineorder/material-stocks:
+    get:
+      summary: Get Stock Level of all Materials
+      description: Returns current stock level of all materials of the location.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: location_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Location identifier
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+      responses:
+        '200':
+          description: A JSON array of material stock levels
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MaterialStock'
+      tags:
+        - Inventory
+
+  /{restaurant_id}/onlineorder/stock-takes:
+    get:
+      summary: Retrieve all Stock Takes
+      description: Returns a list of all stock takes of the restaurant.
+      parameters:
+        - name: restaurant_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Restaurant identifier
+        - name: location_id
+          in: query
+          schema:
+            type: string
+          description: Show stock takes associated with the location
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Return up to this many results per page (default: 50)
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Return a specific page of results (default: 1)
+        - name: updated_at_min
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Show stock takes last updated after date (Remember to escape + sign with %2B)
+      responses:
+        '200':
+          description: A JSON array of stock takes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StockTake'
+      tags:
+        - Inventory
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # OAuth schemas
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: Access token
+        token_type:
+          type: string
+          enum: [bearer]
+          description: Token type
+        expires_in:
+          type: integer
+          description: Token expiry time in seconds
+        refresh_token:
+          type: string
+          description: Refresh token
+      required:
+        - access_token
+        - token_type
+        - expires_in
+        - refresh_token
+
+    # Restaurant Settings schemas
+    Restaurant:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Restaurant ID
+        name:
+          type: string
+          description: Restaurant name
+        currency:
+          type: string
+          description: ISO currency code
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - name
+        - currency
+        - updated_at
+
+    Location:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Location ID
+        name:
+          type: string
+          description: Location name
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - name
+        - updated_at
+
+    DiningOption:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Dining option ID
+        name:
+          type: string
+          description: Dining option name
+        sort:
+          type: integer
+          description: Sort order
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - name
+        - sort
+        - updated_at
+
+    PaymentMethod:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Payment method ID
+        name:
+          type: string
+          description: Payment method name
+        sort:
+          type: integer
+          description: Sort order
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        payment_inputs:
+          type: array
+          description: List of additional inputs for this payment method
+          items:
+            $ref: '#/components/schemas/PaymentMethodInput'
+      required:
+        - id
+        - name
+        - sort
+        - updated_at
+        - payment_inputs
+
+    PaymentMethodInput:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Payment input ID
+        name:
+          type: string
+          description: Payment input name
+        sort:
+          type: integer
+          description: Sort order
+      required:
+        - id
+        - name
+        - sort
+
+    Charge:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Charge ID
+        name:
+          type: string
+          description: Charge name
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        dining_options:
+          type: array
+          description: List of dining options that apply this charge
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Dining option ID
+            required:
+              - id
+      required:
+        - id
+        - name
+        - updated_at
+        - dining_options
+
+    # Floorplan schemas
+    Floorplan:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Floorplan ID
+        name:
+          type: string
+          description: Floorplan name
+        sort:
+          type: integer
+          description: Sort order
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        objects:
+          type: array
+          description: List of objects in the floorplan
+          items:
+            $ref: '#/components/schemas/FloorplanObject'
+      required:
+        - id
+        - name
+        - sort
+        - updated_at
+        - objects
+
+    FloorplanObject:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Object ID
+        name:
+          type: string
+          description: Object name (e.g., Table 1)
+        pax:
+          type: integer
+          description: Number of persons this object can accommodate
+      required:
+        - id
+        - name
+        - pax
+
+    # Item schemas
+    Item:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Item ID
+        item_no:
+          type: string
+          nullable: true
+          description: Item number
+        name:
+          type: string
+          description: Item name
+        description:
+          type: string
+          nullable: true
+          maxLength: 100
+          description: Item description
+        image:
+          type: string
+          nullable: true
+          description: Item image URL
+        category:
+          type: string
+          description: Category ID
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        variants:
+          type: array
+          description: Item variants
+          items:
+            $ref: '#/components/schemas/ItemVariant'
+        modifiers:
+          type: array
+          description: Item modifiers
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Modifier ID
+            required:
+              - id
+      required:
+        - id
+        - name
+        - category
+        - updated_at
+        - variants
+        - modifiers
+
+    ItemVariant:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Variant ID
+        name:
+          type: string
+          description: Variant name
+        sku:
+          type: string
+          nullable: true
+          description: Stock keeping unit
+        summary:
+          type: string
+          nullable: true
+          description: Variant summary
+        price:
+          type: number
+          nullable: true
+          description: Variant price (null for open price)
+        show_in_menu:
+          type: boolean
+          description: Whether to show in menu
+        sort:
+          type: integer
+          description: Sort order
+      required:
+        - id
+        - name
+        - show_in_menu
+        - sort
+
+    Modifier:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Modifier ID
+        name:
+          type: string
+          description: Modifier name
+        min_selection:
+          type: integer
+          nullable: true
+          description: Minimum selection (null represents optional)
+        max_selection:
+          type: integer
+          nullable: true
+          description: Maximum selection (null represents unlimited)
+        sort:
+          type: integer
+          description: Sort order
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        modifier_options:
+          type: array
+          description: Modifier options
+          items:
+            $ref: '#/components/schemas/ModifierOption'
+      required:
+        - id
+        - name
+        - sort
+        - updated_at
+        - modifier_options
+
+    ModifierOption:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Modifier option ID
+        name:
+          type: string
+          description: Option name
+        sku:
+          type: string
+          nullable: true
+          description: Stock keeping unit
+        summary:
+          type: string
+          nullable: true
+          description: Option summary
+        price:
+          type: number
+          description: Option price
+        max_qty:
+          type: integer
+          description: Maximum quantity
+        default_selected:
+          type: boolean
+          description: Whether selected by default
+        show_in_menu:
+          type: boolean
+          description: Whether to show in menu
+        sort:
+          type: integer
+          description: Sort order
+      required:
+        - id
+        - name
+        - price
+        - max_qty
+        - default_selected
+        - show_in_menu
+        - sort
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Category ID
+        name:
+          type: string
+          description: Category name
+        parent_category:
+          type: string
+          nullable: true
+          description: Parent category ID
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - name
+        - updated_at
+
+    # Discount & Promotion schemas
+    Discount:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Discount ID
+        name:
+          type: string
+          description: Discount name
+        type:
+          type: string
+          enum: [percent, price]
+          description: Discount type
+        stackable:
+          type: boolean
+          description: Whether discount is stackable
+        manufacturer_discount:
+          type: boolean
+          description: Whether discount is applied after charges and taxes
+        value:
+          type: number
+          nullable: true
+          description: Discount value (null for open discount)
+        max_value:
+          type: number
+          nullable: true
+          description: Maximum discount applicable
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - name
+        - type
+        - stackable
+        - manufacturer_discount
+        - updated_at
+
+    Promotion:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Promotion ID
+        name:
+          type: string
+          description: Promotion name
+        summary:
+          type: string
+          description: Promotion summary
+        type:
+          type: string
+          enum: [auto, voucher]
+          description: Promotion type
+        start_date:
+          type: string
+          format: date-time
+          description: Start date (ISO 8601)
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: End date (ISO 8601, null for no end date)
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - name
+        - summary
+        - type
+        - start_date
+        - updated_at
+
+    # Voucher schemas
+    Voucher:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Voucher ID
+        voucher_code:
+          type: string
+          description: Voucher code (alphanumeric, no spaces, max 50 characters, unique)
+        applicable:
+          type: string
+          nullable: true
+          enum: [customer]
+          description: Voucher applicability
+        type:
+          type: string
+          enum: [discount, promotion]
+          description: Voucher type
+        discount:
+          type: string
+          nullable: true
+          description: Discount ID (if type is discount)
+        promotion:
+          type: string
+          nullable: true
+          description: Promotion ID (if type is promotion)
+        customer:
+          type: string
+          nullable: true
+          description: Customer ID (if applicable is customer)
+        redeemed:
+          type: integer
+          description: Number of redemptions
+        max_redemptions:
+          type: integer
+          nullable: true
+          description: Maximum redemptions (null for unlimited)
+        start_date:
+          type: string
+          format: date-time
+          description: Start date (ISO 8601)
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: End date (ISO 8601, null for no end date)
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - voucher_code
+        - type
+        - redeemed
+        - start_date
+        - updated_at
+
+    VoucherInput:
+      type: object
+      properties:
+        voucher_code:
+          type: string
+          description: Voucher code (alphanumeric, no spaces, max 50 characters, unique)
+        applicable:
+          type: string
+          nullable: true
+          enum: [customer]
+          description: Voucher applicability
+        type:
+          type: string
+          enum: [discount, promotion]
+          description: Voucher type
+        discount:
+          type: string
+          description: Discount ID (required if type is discount)
+        promotion:
+          type: string
+          description: Promotion ID (required if type is promotion)
+        customer:
+          type: string
+          description: Customer ID (required if applicable is customer)
+        max_redemptions:
+          type: integer
+          description: Maximum redemptions
+        start_date:
+          type: string
+          format: date-time
+          description: Start date (ISO 8601)
+        end_date:
+          type: string
+          format: date-time
+          description: End date (ISO 8601)
+      required:
+        - voucher_code
+        - type
+        - start_date
+
+    # Menu schemas
+    Menu:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Menu ID
+        name:
+          type: string
+          description: Menu name
+        sort:
+          type: integer
+          description: Sort order
+        items:
+          type: array
+          description: Menu items
+          items:
+            $ref: '#/components/schemas/MenuItem'
+        times:
+          type: array
+          description: Menu times
+          items:
+            $ref: '#/components/schemas/MenuTime'
+      required:
+        - id
+        - name
+        - sort
+        - items
+        - times
+
+    MenuItem:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Item ID
+        item_no:
+          type: string
+          nullable: true
+          description: Item number
+        name:
+          type: string
+          description: Item name
+        description:
+          type: string
+          nullable: true
+          maxLength: 100
+          description: Item description
+        sort:
+          type: integer
+          description: Sort order
+        image:
+          type: string
+          nullable: true
+          description: Item image URL
+        category:
+          type: string
+          description: Category ID
+        variants:
+          type: array
+          description: Item variants
+          items:
+            $ref: '#/components/schemas/ItemVariant'
+        modifiers:
+          type: array
+          description: Item modifiers
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Modifier ID
+            required:
+              - id
+      required:
+        - id
+        - name
+        - sort
+        - category
+        - variants
+        - modifiers
+
+    MenuTime:
+      type: object
+      properties:
+        day:
+          type: string
+          enum: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
+          description: Day of week
+        start_time:
+          type: string
+          pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+          description: Start time (HH:MM)
+        end_time:
+          type: string
+          pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+          description: End time (HH:MM)
+      required:
+        - day
+        - start_time
+        - end_time
+
+    # Customer schemas
+    Customer:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Customer ID
+        reference:
+          type: string
+          nullable: true
+          maxLength: 50
+          description: Customer reference
+        first_name:
+          type: string
+          nullable: true
+          maxLength: 50
+          description: First name
+        last_name:
+          type: string
+          nullable: true
+          maxLength: 50
+          description: Last name
+        company_name:
+          type: string
+          nullable: true
+          maxLength: 50
+          description: Company name
+        email:
+          type: string
+          nullable: true
+          maxLength: 50
+          format: email
+          description: Email address
+        phone:
+          type: string
+          nullable: true
+          maxLength: 50
+          description: Phone number
+        dob:
+          type: string
+          nullable: true
+          format: date
+          description: Date of birth (YYYY-mm-dd)
+        gender:
+          type: string
+          nullable: true
+          enum: [M, F]
+          description: Gender
+        address1:
+          type: string
+          nullable: true
+          maxLength: 100
+          description: Address line 1
+        address2:
+          type: string
+          nullable: true
+          maxLength: 100
+          description: Address line 2
+        city:
+          type: string
+          nullable: true
+          maxLength: 100
+          description: City
+        country:
+          type: string
+          nullable: true
+          pattern: '^[A-Z]{2}$'
+          description: Country (Alpha-2 country code)
+        postal:
+          type: string
+          nullable: true
+          maxLength: 50
+          description: Postal code
+        notes:
+          type: string
+          nullable: true
+          maxLength: 200
+          description: Customer notes
+        marketing_consent_email:
+          type: boolean
+          description: Email marketing consent
+        marketing_consent_text:
+          type: boolean
+          description: Text marketing consent
+        marketing_consent_phone:
+          type: boolean
+          description: Phone marketing consent
+        customer_group:
+          type: string
+          nullable: true
+          description: Customer group ID
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - marketing_consent_email
+        - marketing_consent_text
+        - marketing_consent_phone
+        - updated_at
+
+    CustomerInput:
+      type: object
+      properties:
+        reference:
+          type: string
+          maxLength: 50
+          description: Customer reference
+        first_name:
+          type: string
+          maxLength: 50
+          description: First name
+        last_name:
+          type: string
+          maxLength: 50
+          description: Last name
+        company_name:
+          type: string
+          maxLength: 50
+          description: Company name
+        email:
+          type: string
+          maxLength: 50
+          format: email
+          description: Email address
+        phone:
+          type: string
+          maxLength: 50
+          description: Phone number
+        dob:
+          type: string
+          format: date
+          description: Date of birth (YYYY-mm-dd)
+        gender:
+          type: string
+          enum: [M, F]
+          description: Gender
+        address1:
+          type: string
+          maxLength: 100
+          description: Address line 1
+        address2:
+          type: string
+          maxLength: 100
+          description: Address line 2
+        city:
+          type: string
+          maxLength: 100
+          description: City
+        country:
+          type: string
+          pattern: '^[A-Z]{2}$'
+          description: Country (Alpha-2 country code)
+        postal:
+          type: string
+          maxLength: 50
+          description: Postal code
+        notes:
+          type: string
+          maxLength: 200
+          description: Customer notes
+        marketing_consent_email:
+          type: boolean
+          description: Email marketing consent
+        marketing_consent_text:
+          type: boolean
+          description: Text marketing consent
+        marketing_consent_phone:
+          type: boolean
+          description: Phone marketing consent
+        customer_group:
+          type: string
+          description: Customer group ID
+
+    CustomerGroup:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Customer group ID
+        name:
+          type: string
+          description: Customer group name
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - name
+        - updated_at
+
+    # Loyalty schemas
+    LoyaltyProgram:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Loyalty program ID
+        name:
+          type: string
+          description: Program name
+        term_single:
+          type: string
+          description: Single term (e.g., Star)
+        term_plural:
+          type: string
+          description: Plural term (e.g., Stars)
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - name
+        - term_single
+        - term_plural
+        - updated_at
+
+    LoyaltyReward:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Reward ID
+        point:
+          type: integer
+          description: Points required
+        name:
+          type: string
+          description: Reward name
+      required:
+        - id
+        - point
+        - name
+
+    LoyaltyMember:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Member ID
+        point:
+          type: integer
+          description: Current points
+        customer:
+          type: string
+          description: Customer ID
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - point
+        - customer
+        - updated_at
+
+    LoyaltyTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Transaction ID
+        member:
+          type: string
+          description: Member ID
+        location:
+          type: string
+          nullable: true
+          description: Location ID
+        order:
+          type: string
+          nullable: true
+          description: Order ID
+        point:
+          type: integer
+          description: Points added/subtracted
+        notes:
+          type: string
+          nullable: true
+          maxLength: 200
+          description: Transaction notes
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+      required:
+        - id
+        - member
+        - point
+        - created_at
+
+    LoyaltyTransactionInput:
+      type: object
+      properties:
+        member:
+          type: string
+          description: Member ID
+        location:
+          type: string
+          description: Location ID
+        points:
+          type: integer
+          description: Points to add (positive) or subtract (negative)
+        notes:
+          type: string
+          maxLength: 200
+          description: Transaction notes
+      required:
+        - member
+        - points
+
+    # Store Credit schemas
+    StoreCredit:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Customer ID
+        store_credit:
+          type: number
+          description: Store credit amount
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - store_credit
+        - updated_at
+
+    StoreCreditTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Transaction ID
+        customer:
+          type: string
+          description: Customer ID
+        location:
+          type: string
+          nullable: true
+          description: Location ID
+        order:
+          type: string
+          nullable: true
+          description: Order ID
+        amount:
+          type: number
+          description: Amount added/subtracted
+        notes:
+          type: string
+          nullable: true
+          maxLength: 200
+          description: Transaction notes
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+      required:
+        - id
+        - customer
+        - amount
+        - created_at
+
+    StoreCreditTransactionInput:
+      type: object
+      properties:
+        customer:
+          type: string
+          description: Customer ID
+        location:
+          type: string
+          description: Location ID
+        amount:
+          type: number
+          description: Amount to add (positive) or subtract (negative)
+        notes:
+          type: string
+          maxLength: 200
+          description: Transaction notes
+      required:
+        - customer
+        - amount
+
+    StoreCreditTopup:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Topup ID
+        customer:
+          type: string
+          description: Customer ID
+        location:
+          type: string
+          nullable: true
+          description: Location ID
+        topup_no:
+          type: string
+          description: Topup number (alphanumeric, no spaces, max 10 characters, unique)
+        topup_amount:
+          type: number
+          description: Topup amount
+        payment:
+          type: string
+          description: Payment ID
+        payment_amount:
+          type: number
+          description: Payment amount
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+      required:
+        - id
+        - customer
+        - topup_no
+        - topup_amount
+        - payment
+        - payment_amount
+        - created_at
+
+    StoreCreditTopupInput:
+      type: object
+      properties:
+        customer:
+          type: string
+          description: Customer ID
+        location:
+          type: string
+          description: Location ID
+        topup_no:
+          type: string
+          pattern: '^[A-Za-z0-9]{1,10}
+          description: Topup number (alphanumeric, no spaces, max 10 characters, unique)
+        topup_amount:
+          type: number
+          description: Topup amount
+        payment:
+          type: string
+          description: Payment ID
+        payment_amount:
+          type: number
+          description: Payment amount
+      required:
+        - customer
+        - topup_amount
+        - payment
+        - payment_amount
+
+    # Order schemas
+    CartInput:
+      type: object
+      properties:
+        location:
+          type: string
+          description: Location ID
+        items:
+          type: array
+          description: Cart items
+          items:
+            $ref: '#/components/schemas/CartItem'
+        charges:
+          type: array
+          description: Custom charge amounts
+          items:
+            $ref: '#/components/schemas/CartCharge'
+        discounts:
+          type: array
+          description: Order-wide discounts
+          items:
+            $ref: '#/components/schemas/CartDiscount'
+        payments:
+          type: array
+          description: Payments
+          items:
+            $ref: '#/components/schemas/CartPayment'
+        refunds:
+          type: array
+          description: Refunds
+          items:
+            $ref: '#/components/schemas/CartRefund'
+        objects:
+          type: array
+          description: Floorplan objects
+          items:
+            $ref: '#/components/schemas/CartObject'
+        loyalty_program_rewards:
+          type: array
+          description: Loyalty rewards to redeem
+          items:
+            type: object
+            properties:
+              loyalty_program_reward:
+                type: string
+                description: Loyalty program reward ID
+            required:
+              - loyalty_program_reward
+        vouchers:
+          type: array
+          description: Vouchers to apply
+          items:
+            type: object
+            properties:
+              voucher:
+                type: string
+                description: Voucher ID
+            required:
+              - voucher
+        order_info:
+          $ref: '#/components/schemas/OrderInfo'
+      required:
+        - location
+
+    CartItem:
+      type: object
+      properties:
+        cart_item_key:
+          type: string
+          description: Reference key (not stored, only used as a reference in response)
+        item:
+          type: string
+          description: Item ID (not required for open items)
+        name:
+          type: string
+          description: Item name (required for open items)
+        qty:
+          type: number
+          description: Quantity
+        qty_unit:
+          type: number
+          description: Quantity for unit-based variant
+        notes:
+          type: string
+          maxLength: 200
+          description: Item notes
+        variant:
+          type: string
+          description: Variant ID
+        price:
+          type: number
+          description: Price (required for open price variant or open item)
+        modifier_options:
+          type: array
+          description: Modifier options
+          items:
+            type: object
+            properties:
+              modifier_option:
+                type: string
+                description: Modifier option ID
+              qty:
+                type: integer
+                default: 1
+                description: Quantity
+            required:
+              - modifier_option
+        discounts:
+          type: array
+          description: Item-based discounts
+          items:
+            $ref: '#/components/schemas/CartDiscount'
+
+    CartCharge:
+      type: object
+      properties:
+        charge:
+          type: string
+          description: Charge ID (must be applicable for selected dining option)
+        amount:
+          type: number
+          description: Custom charge amount
+      required:
+        - charge
+        - amount
+
+    CartDiscount:
+      type: object
+      properties:
+        discount:
+          type: string
+          description: Discount ID
+        value:
+          type: number
+          description: Value for open discount
+      required:
+        - discount
+
+    CartPayment:
+      type: object
+      properties:
+        payment:
+          type: string
+          description: Payment ID
+        receipt_no:
+          type: string
+          pattern: '^[A-Za-z0-9]{1,10}
+          description: Receipt number (alphanumeric, no spaces, max 10 characters, unique)
+        amount:
+          type: number
+          description: Payment amount
+        payment_inputs:
+          type: array
+          description: Additional payment inputs
+          items:
+            type: object
+            properties:
+              payment_input:
+                type: string
+                description: Payment input ID
+              value:
+                type: string
+                description: Input value
+            required:
+              - payment_input
+              - value
+      required:
+        - payment
+        - amount
+
+    CartRefund:
+      type: object
+      properties:
+        refund_no:
+          type: string
+          pattern: '^[A-Za-z0-9]{1,10}
+          description: Refund number (alphanumeric, no spaces, max 10 characters, unique)
+        refund_payments:
+          type: array
+          description: Refund payments
+          items:
+            type: object
+            properties:
+              payment:
+                type: string
+                description: Payment ID
+              amount:
+                type: number
+                description: Refund amount
+            required:
+              - payment
+              - amount
+      required:
+        - refund_payments
+
+    CartObject:
+      type: object
+      properties:
+        object:
+          type: string
+          description: Object ID
+        pax:
+          type: integer
+          description: Number of persons
+      required:
+        - object
+        - pax
+
+    OrderInfo:
+      type: object
+      properties:
+        dining_option:
+          type: string
+          description: Dining option ID
+        order_no:
+          type: string
+          pattern: '^[A-Za-z0-9]{1,10}
+          description: Order number (alphanumeric, no spaces, max 10 characters, unique)
+        order_ticket:
+          type: string
+          maxLength: 50
+          description: Order ticket
+        pax:
+          type: integer
+          default: 1
+          description: Number of persons
+        status:
+          type: string
+          enum: [pending, pending_payment]
+          default: pending
+          description: Order status
+        notes:
+          type: string
+          maxLength: 200
+          description: Order notes
+        customer:
+          type: string
+          description: Customer ID
+        first_name:
+          type: string
+          maxLength: 50
+          description: Customer first name
+        last_name:
+          type: string
+          maxLength: 50
+          description: Customer last name
+        email:
+          type: string
+          maxLength: 50
+          format: email
+          description: Customer email
+        phone:
+          type: string
+          maxLength: 50
+          description: Customer phone
+        timeslot:
+          type: string
+          description: Timeslot ID for pre-orders
+        timeslot_start:
+          type: string
+          format: date-time
+          description: Timeslot start time (ISO 8601) for pre-orders
+        timeslot_end:
+          type: string
+          format: date-time
+          description: Timeslot end time (ISO 8601) for pre-orders
+        delivery_zone:
+          type: string
+          description: Delivery zone ID for delivery orders
+        address1:
+          type: string
+          maxLength: 100
+          description: Delivery address line 1
+        address2:
+          type: string
+          maxLength: 100
+          description: Delivery address line 2
+        city:
+          type: string
+          maxLength: 100
+          description: Delivery city
+        country:
+          type: string
+          pattern: '^[A-Z]{2}
+          description: Delivery country (Alpha-2 country code)
+        postal:
+          type: string
+          maxLength: 50
+          description: Delivery postal code
+        address_lat:
+          type: number
+          description: Delivery address latitude
+        address_lng:
+          type: number
+          description: Delivery address longitude
+        order_at:
+          type: string
+          format: date-time
+          description: Order time for pre-orders (ISO 8601)
+
+    CartSummary:
+      type: object
+      properties:
+        subtotal:
+          type: number
+          description: Subtotal amount
+        total:
+          type: number
+          description: Total amount
+        financial_status:
+          type: string
+          enum: [pending, partially_paid, paid, partially_refunded, refunded, voided]
+          description: Financial status
+        items:
+          type: array
+          description: Calculated items
+          items:
+            $ref: '#/components/schemas/CartSummaryItem'
+        discounts:
+          type: array
+          description: Applied discounts
+          items:
+            $ref: '#/components/schemas/AppliedDiscount'
+        charges:
+          type: array
+          description: Applied charges
+          items:
+            $ref: '#/components/schemas/AppliedCharge'
+        taxes:
+          type: array
+          description: Applied taxes
+          items:
+            $ref: '#/components/schemas/AppliedTax'
+        manufacturer_discounts:
+          type: array
+          description: Applied manufacturer discounts
+          items:
+            $ref: '#/components/schemas/AppliedDiscount'
+        payments:
+          type: array
+          description: Payments
+          items:
+            $ref: '#/components/schemas/CartSummaryPayment'
+        refunds:
+          type: array
+          description: Refunds
+          items:
+            $ref: '#/components/schemas/CartSummaryRefund'
+        objects:
+          type: array
+          description: Objects
+          items:
+            $ref: '#/components/schemas/CartObject'
+        vouchers:
+          type: array
+          description: Applied vouchers
+          items:
+            type: object
+            properties:
+              voucher:
+                type: string
+                description: Voucher ID
+            required:
+              - voucher
+
+    CartSummaryItem:
+      type: object
+      properties:
+        cart_item_key:
+          type: string
+          description: Cart item key (if provided)
+        item:
+          type: string
+          description: Item ID
+        price_per:
+          type: number
+          description: Price per unit
+        qty:
+          type: number
+          description: Quantity
+        qty_unit:
+          type: number
+          description: Unit quantity
+        price:
+          type: number
+          description: Total price
+        variant:
+          type: string
+          description: Variant ID
+        variant_price:
+          type: number
+          description: Variant price
+        sort:
+          type: integer
+          description: Sort order
+        modifier_options:
+          type: array
+          description: Modifier options
+          items:
+            type: object
+            properties:
+              modifier_option:
+                type: string
+                description: Modifier option ID
+              price_per:
+                type: number
+                description: Price per unit
+              qty:
+                type: integer
+                description: Quantity
+              price:
+                type: number
+                description: Total price
+        discounts:
+          type: array
+          description: Applied discounts
+          items:
+            $ref: '#/components/schemas/AppliedDiscount'
+
+    AppliedDiscount:
+      type: object
+      properties:
+        discount:
+          type: string
+          description: Discount ID
+        name:
+          type: string
+          description: Discount name
+        amount:
+          type: number
+          description: Discount amount
+        voucher:
+          type: string
+          description: Voucher ID (if applied via voucher)
+        promotion:
+          type: string
+          description: Promotion ID (if promotion discount)
+        loyalty_program_reward:
+          type: string
+          description: Loyalty program reward ID (if loyalty discount)
+
+    AppliedCharge:
+      type: object
+      properties:
+        charge:
+          type: string
+          description: Charge ID
+        name:
+          type: string
+          description: Charge name
+        amount:
+          type: number
+          description: Charge amount
+
+    AppliedTax:
+      type: object
+      properties:
+        tax:
+          type: string
+          description: Tax ID
+        name:
+          type: string
+          description: Tax name
+        amount:
+          type: number
+          description: Tax amount
+        inclusive:
+          type: boolean
+          description: Whether tax is inclusive
+
+    CartSummaryPayment:
+      type: object
+      properties:
+        payment:
+          type: string
+          description: Payment ID
+        amount:
+          type: number
+          description: Payment amount
+        payment_inputs:
+          type: array
+          description: Payment inputs
+          items:
+            type: object
+            properties:
+              payment_input:
+                type: string
+                description: Payment input ID
+              value:
+                type: string
+                description: Input value
+
+    CartSummaryRefund:
+      type: object
+      properties:
+        amount:
+          type: number
+          description: Refund amount
+        refund_payments:
+          type: array
+          description: Refund payments
+          items:
+            type: object
+            properties:
+              payment:
+                type: string
+                description: Payment ID
+              amount:
+                type: number
+                description: Refund amount
+
+    OrderSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Order ID
+        location:
+          type: string
+          description: Location ID
+        customer:
+          type: string
+          nullable: true
+          description: Customer ID
+        order_no:
+          type: string
+          description: Order number
+        order_ticket:
+          type: string
+          nullable: true
+          description: Order ticket
+        dining_option:
+          type: string
+          description: Dining option ID
+        subtotal:
+          type: number
+          description: Subtotal amount
+        total:
+          type: number
+          description: Total amount
+        rounding:
+          type: number
+          description: Rounding amount
+        paid:
+          type: number
+          description: Paid amount
+        status:
+          type: string
+          enum: [pending, open, closed, cancelled, pending_payment, cancelled_payment]
+          description: Order status
+        financial_status:
+          type: string
+          enum: [pending, partially_paid, paid, partially_refunded, refunded, voided]
+          description: Financial status
+        kitchen_status:
+          type: string
+          nullable: true
+          enum: [fulfilled, partial]
+          description: Kitchen status
+        expedite_status:
+          type: string
+          nullable: true
+          enum: [expedited, partial]
+          description: Expedite status
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        objects:
+          type: array
+          description: Floorplan objects
+          items:
+            type: object
+            properties:
+              object:
+                type: string
+                description: Object ID
+              name:
+                type: string
+                description: Object name
+            required:
+              - object
+              - name
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Order ID
+        location:
+          type: string
+          description: Location ID
+        customer:
+          type: string
+          nullable: true
+          description: Customer ID
+        order_no:
+          type: string
+          description: Order number
+        order_ticket:
+          type: string
+          nullable: true
+          description: Order ticket
+        dining_option:
+          type: string
+          description: Dining option ID
+        dining_option_name:
+          type: string
+          description: Dining option name
+        pax:
+          type: integer
+          description: Number of persons
+        subtotal:
+          type: number
+          description: Subtotal amount
+        total:
+          type: number
+          description: Total amount
+        rounding:
+          type: number
+          description: Rounding amount
+        paid:
+          type: number
+          description: Paid amount
+        status:
+          type: string
+          enum: [pending, open, closed, cancelled, pending_payment, cancelled_payment]
+          description: Order status
+        financial_status:
+          type: string
+          enum: [pending, partially_paid, paid, partially_refunded, refunded, voided]
+          description: Financial status
+        kitchen_status:
+          type: string
+          nullable: true
+          enum: [fulfilled, partial]
+          description: Kitchen status
+        expedite_status:
+          type: string
+          nullable: true
+          enum: [expedited, partial]
+          description: Expedite status
+        notes:
+          type: string
+          nullable: true
+          maxLength: 200
+          description: Order notes
+        void_reason:
+          type: string
+          nullable: true
+          maxLength: 200
+          description: Void reason
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        objects:
+          type: array
+          description: Floorplan objects
+          items:
+            type: object
+            properties:
+              object:
+                type: string
+                description: Object ID
+              name:
+                type: string
+                description: Object name
+            required:
+              - object
+              - name
+        items:
+          type: array
+          description: Order items
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        discounts:
+          type: array
+          description: Order discounts
+          items:
+            $ref: '#/components/schemas/OrderDiscount'
+        charges:
+          type: array
+          description: Order charges
+          items:
+            $ref: '#/components/schemas/OrderCharge'
+        taxes:
+          type: array
+          description: Order taxes
+          items:
+            $ref: '#/components/schemas/OrderTax'
+        manufacturer_discounts:
+          type: array
+          description: Manufacturer discounts
+          items:
+            $ref: '#/components/schemas/OrderDiscount'
+        loyalty_program_rewards:
+          type: array
+          description: Redeemed loyalty rewards
+          items:
+            type: object
+            properties:
+              loyalty_program_reward:
+                type: string
+                description: Loyalty program reward ID
+              point:
+                type: integer
+                description: Points redeemed
+            required:
+              - loyalty_program_reward
+              - point
+        vouchers:
+          type: array
+          description: Applied vouchers
+          items:
+            type: object
+            properties:
+              voucher:
+                type: string
+                description: Voucher ID
+              voucher_code:
+                type: string
+                description: Voucher code
+            required:
+              - voucher
+              - voucher_code
+        payments:
+          type: array
+          description: Order payments
+          items:
+            $ref: '#/components/schemas/OrderPayment'
+        refunds:
+          type: array
+          description: Order refunds
+          items:
+            $ref: '#/components/schemas/OrderRefund'
+
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Order item ID
+        item:
+          type: string
+          nullable: true
+          description: Item ID
+        item_no:
+          type: string
+          nullable: true
+          description: Item number
+        name:
+          type: string
+          description: Item name
+        price_per:
+          type: number
+          description: Price per unit
+        qty:
+          type: number
+          description: Quantity
+        qty_unit:
+          type: number
+          description: Unit quantity
+        price:
+          type: number
+          description: Total price
+        notes:
+          type: string
+          nullable: true
+          maxLength: 200
+          description: Item notes
+        variant:
+          type: string
+          nullable: true
+          description: Variant ID
+        variant_name:
+          type: string
+          nullable: true
+          description: Variant name
+        variant_sku:
+          type: string
+          nullable: true
+          description: Variant SKU
+        variant_price:
+          type: number
+          nullable: true
+          description: Variant price
+        sort:
+          type: integer
+          description: Sort order
+        modifier_options:
+          type: array
+          description: Modifier options
+          items:
+            type: object
+            properties:
+              modifier_option:
+                type: string
+                description: Modifier option ID
+              name:
+                type: string
+                description: Option name
+              sku:
+                type: string
+                nullable: true
+                description: Option SKU
+              price_per:
+                type: number
+                description: Price per unit
+              qty:
+                type: integer
+                description: Quantity
+              price:
+                type: number
+                description: Total price
+            required:
+              - modifier_option
+              - name
+              - price_per
+              - qty
+              - price
+        discounts:
+          type: array
+          description: Item discounts
+          items:
+            $ref: '#/components/schemas/OrderDiscount'
+
+    OrderDiscount:
+      type: object
+      properties:
+        discount:
+          type: string
+          nullable: true
+          description: Discount ID
+        name:
+          type: string
+          description: Discount name
+        amount:
+          type: number
+          description: Discount amount
+        voucher:
+          type: string
+          nullable: true
+          description: Voucher ID (if discount applied via voucher)
+        promotion:
+          type: string
+          nullable: true
+          description: Promotion ID (if promotion discount)
+        loyalty_program_reward:
+          type: string
+          nullable: true
+          description: Loyalty program reward ID (if loyalty discount)
+
+    OrderCharge:
+      type: object
+      properties:
+        charge:
+          type: string
+          description: Charge ID
+        name:
+          type: string
+          description: Charge name
+        amount:
+          type: number
+          description: Charge amount
+
+    OrderTax:
+      type: object
+      properties:
+        tax:
+          type: string
+          description: Tax ID
+        name:
+          type: string
+          description: Tax name
+        amount:
+          type: number
+          description: Tax amount
+        inclusive:
+          type: boolean
+          description: Whether tax is inclusive
+
+    OrderPayment:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Receipt ID
+        payment:
+          type: string
+          description: Payment ID
+        payment_name:
+          type: string
+          description: Payment name
+        receipt_no:
+          type: string
+          description: Receipt number
+        amount:
+          type: number
+          description: Payment amount
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        payment_inputs:
+          type: array
+          description: Payment inputs
+          items:
+            type: object
+            properties:
+              payment_input:
+                type: string
+                description: Payment input ID
+              value:
+                type: string
+                description: Input value
+
+    OrderRefund:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Refund ID
+        refund_no:
+          type: string
+          description: Refund number
+        amount:
+          type: number
+          description: Refund amount
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        refund_payments:
+          type: array
+          description: Refund payments
+          items:
+            type: object
+            properties:
+              payment:
+                type: string
+                description: Payment ID
+              payment_name:
+                type: string
+                description: Payment name
+              amount:
+                type: number
+                description: Refund amount
+
+    OrderUpdateInput:
+      type: object
+      properties:
+        items:
+          type: array
+          description: Order items (use order item id to retain kitchen/expedite status)
+          items:
+            $ref: '#/components/schemas/OrderUpdateItem'
+        charges:
+          type: array
+          description: Custom charge amounts
+          items:
+            $ref: '#/components/schemas/CartCharge'
+        discounts:
+          type: array
+          description: Order-wide discounts
+          items:
+            $ref: '#/components/schemas/CartDiscount'
+        payments:
+          type: array
+          description: NEW payments only (do not include existing payments)
+          items:
+            $ref: '#/components/schemas/CartPayment'
+        objects:
+          type: array
+          description: Floorplan objects
+          items:
+            $ref: '#/components/schemas/CartObject'
+        loyalty_program_rewards:
+          type: array
+          description: Loyalty rewards to redeem
+          items:
+            type: object
+            properties:
+              loyalty_program_reward:
+                type: string
+                description: Loyalty program reward ID
+            required:
+              - loyalty_program_reward
+        vouchers:
+          type: array
+          description: Vouchers to apply
+          items:
+            type: object
+            properties:
+              voucher:
+                type: string
+                description: Voucher ID
+            required:
+              - voucher
+        order_info:
+          $ref: '#/components/schemas/OrderInfo'
+
+    OrderUpdateItem:
+      allOf:
+        - $ref: '#/components/schemas/CartItem'
+        - type: object
+          properties:
+            id:
+              type: string
+              description: Order item ID (use to retain kitchen/expedite status)
+
+    PaymentInput:
+      type: object
+      properties:
+        payment:
+          type: string
+          description: Payment ID
+        receipt_no:
+          type: string
+          pattern: '^[A-Za-z0-9]{1,10}
+          description: Receipt number (alphanumeric, no spaces, max 10 characters, unique)
+        amount:
+          type: number
+          description: Payment amount
+        payment_inputs:
+          type: array
+          description: Additional payment inputs
+          items:
+            type: object
+            properties:
+              payment_input:
+                type: string
+                description: Payment input ID
+              value:
+                type: string
+                description: Input value
+            required:
+              - payment_input
+              - value
+      required:
+        - payment
+        - amount
+
+    RefundInput:
+      type: object
+      properties:
+        refund_no:
+          type: string
+          pattern: '^[A-Za-z0-9]{1,10}
+          description: Refund number (alphanumeric, no spaces, max 10 characters, unique)
+        refund_payments:
+          type: array
+          description: Refund payments
+          items:
+            type: object
+            properties:
+              payment:
+                type: string
+                description: Payment ID
+              amount:
+                type: number
+                description: Refund amount
+            required:
+              - payment
+              - amount
+      required:
+        - refund_payments
+
+    # Reservation schemas
+    Experience:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Experience ID
+        name:
+          type: string
+          description: Experience name
+        sort:
+          type: integer
+          description: Sort order
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - name
+        - sort
+        - updated_at
+
+    TableSection:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Table section ID
+        name:
+          type: string
+          description: Table section name
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - name
+        - updated_at
+
+    Service:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Service ID
+        name:
+          type: string
+          description: Service name
+        experience:
+          type: string
+          description: Experience ID
+        table_section:
+          type: string
+          description: Table section ID
+        available_times:
+          type: array
+          description: Available times
+          items:
+            type: object
+            properties:
+              time:
+                type: string
+                format: date-time
+                description: Available time (ISO 8601)
+            required:
+              - time
+      required:
+        - id
+        - name
+        - experience
+        - table_section
+        - available_times
+
+    ReservationSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Reservation ID
+        location:
+          type: string
+          description: Location ID
+        customer:
+          type: string
+          nullable: true
+          description: Customer ID
+        reservation_no:
+          type: string
+          description: Reservation number
+        reservation_time:
+          type: string
+          format: date-time
+          description: Reservation time (ISO 8601)
+        service:
+          type: string
+          description: Service ID
+        experience:
+          type: string
+          description: Experience ID
+        table_section:
+          type: string
+          description: Table section ID
+        pax:
+          type: integer
+          description: Total number of persons
+        adult:
+          type: integer
+          description: Number of adults
+        children:
+          type: integer
+          description: Number of children
+        total_deposit:
+          type: number
+          description: Total deposit amount
+        status:
+          type: string
+          enum: [booked, arrived, seated, completed, no_show, cancelled, pending_payment, cancelled_payment]
+          description: Reservation status
+        confirm_by:
+          type: string
+          nullable: true
+          enum: [restaurant, customer]
+          description: Confirmation by
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        objects:
+          type: array
+          description: Reserved objects
+          items:
+            type: object
+            properties:
+              object:
+                type: string
+                description: Object ID
+              name:
+                type: string
+                description: Object name
+            required:
+              - object
+              - name
+
+    Reservation:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Reservation ID
+        location:
+          type: string
+          description: Location ID
+        customer:
+          type: string
+          nullable: true
+          description: Customer ID
+        reservation_no:
+          type: string
+          description: Reservation number
+        reservation_time:
+          type: string
+          format: date-time
+          description: Reservation time (ISO 8601)
+        service:
+          type: string
+          description: Service ID
+        service_name:
+          type: string
+          description: Service name
+        experience:
+          type: string
+          description: Experience ID
+        experience_name:
+          type: string
+          description: Experience name
+        table_section:
+          type: string
+          description: Table section ID
+        table_section_name:
+          type: string
+          description: Table section name
+        pax:
+          type: integer
+          description: Total number of persons
+        adult:
+          type: integer
+          description: Number of adults
+        children:
+          type: integer
+          description: Number of children
+        total_deposit:
+          type: number
+          description: Total deposit amount
+        status:
+          type: string
+          enum: [booked, arrived, seated, completed, no_show, cancelled, pending_payment, cancelled_payment]
+          description: Reservation status
+        confirm_by:
+          type: string
+          nullable: true
+          enum: [restaurant, customer]
+          description: Confirmation by
+        notes:
+          type: string
+          nullable: true
+          maxLength: 200
+          description: Reservation notes
+        cancel_reason:
+          type: string
+          nullable: true
+          maxLength: 200
+          description: Cancellation reason
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        created_at:
+          type: string
+          format: date-time
+          description: Creation timestamp
+        objects:
+          type: array
+          description: Reserved objects
+          items:
+            type: object
+            properties:
+              object:
+                type: string
+                description: Object ID
+              name:
+                type: string
+                description: Object name
+            required:
+              - object
+              - name
+
+    ReservationInput:
+      type: object
+      properties:
+        location:
+          type: string
+          description: Location ID
+        objects:
+          type: array
+          description: Objects to reserve
+          items:
+            $ref: '#/components/schemas/CartObject'
+        reservation_info:
+          $ref: '#/components/schemas/ReservationInfo'
+      required:
+        - location
+        - reservation_info
+
+    ReservationInfo:
+      type: object
+      properties:
+        customer:
+          type: string
+          description: Customer ID
+        reservation_no:
+          type: string
+          pattern: '^[A-Za-z0-9]{1,10}
+          description: Reservation number (alphanumeric, no spaces, max 10 characters, unique)
+        reservation_time:
+          type: string
+          format: date-time
+          description: Reservation time (ISO 8601)
+        service:
+          type: string
+          description: Service ID
+        first_name:
+          type: string
+          maxLength: 50
+          description: First name
+        last_name:
+          type: string
+          maxLength: 50
+          description: Last name
+        email:
+          type: string
+          maxLength: 50
+          format: email
+          description: Email address
+        phone:
+          type: string
+          maxLength: 50
+          description: Phone number
+        pax:
+          type: integer
+          description: Total number of persons (sum of adult and children)
+        adult:
+          type: integer
+          description: Number of adults
+        children:
+          type: integer
+          description: Number of children
+        status:
+          type: string
+          enum: [booked, pending_payment]
+          default: booked
+          description: Reservation status (default booked for no-deposit, pending_payment for deposit)
+        confirm_by:
+          type: string
+          enum: [restaurant, customer]
+          description: Confirmation by
+        notes:
+          type: string
+          maxLength: 200
+          description: Reservation notes
+      required:
+        - reservation_time
+        - service
+        - pax
+        - adult
+        - children
+
+    ReservationUpdateInput:
+      type: object
+      properties:
+        objects:
+          type: array
+          description: Objects to reserve
+          items:
+            $ref: '#/components/schemas/CartObject'
+        reservation_info:
+          $ref: '#/components/schemas/ReservationInfo'
+
+    # Inventory schemas
+    Material:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Material ID
+        name:
+          type: string
+          description: Material name
+        sku:
+          type: string
+          nullable: true
+          description: Stock keeping unit
+        unit:
+          type: string
+          description: Unit of measurement
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - id
+        - name
+        - unit
+        - updated_at
+
+    MaterialStock:
+      type: object
+      properties:
+        material:
+          type: string
+          description: Material ID
+        qty:
+          type: number
+          description: Current stock quantity
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+      required:
+        - material
+        - qty
+        - updated_at
+
+    StockTake:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Stock take ID
+        location:
+          type: string
+          description: Location ID
+        notes:
+          type: string
+          nullable: true
+          maxLength: 200
+          description: Stock take notes
+        start_date:
+          type: string
+          format: date-time
+          description: Start date (ISO 8601)
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+          description: End date (ISO 8601, null if stock take is ongoing)
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        materials:
+          type: array
+          description: Counted materials
+          items:
+            type: object
+            properties:
+              material:
+                type: string
+                description: Material ID
+              counted:
+                type: number
+                description: Counted quantity
+            required:
+              - material
+              - counted
+      required:
+        - id
+        - location
+        - start_date
+        - updated_at
+        - materials
+
+tags:
+  - name: OAuth
+    description: OAuth 2.0 authorization endpoints
+  - name: Restaurant Settings
+    description: Restaurant configuration and settings
+  - name: Floorplans
+    description: Floorplan and table management
+  - name: Items
+    description: Menu items, modifiers, and categories
+  - name: Discounts & Promotions
+    description: Discount and promotion management
+  - name: Vouchers
+    description: Voucher management
+  - name: Online Menu
+    description: Menu display and configuration
+  - name: Customers
+    description: Customer management
+  - name: Loyalty
+    description: Loyalty program management (requires subscription)
+  - name: Store Credit
+    description: Store credit management
+  - name: Place Order
+    description: Cart calculation and order placement
+  - name: Manage Order
+    description: Order management and status updates
+  - name: Reservations
+    description: Reservation management (requires subscription)
+  - name: Inventory
+    description: Inventory and stock management
