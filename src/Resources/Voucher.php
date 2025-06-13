@@ -24,7 +24,7 @@ class Voucher extends AbstractResource
      * @return VoucherCollection
      * @throws ApiException
      */
-    public function list(string $restaurantId = null, array $params = []): VoucherCollection
+    public function list(?string $restaurantId = null, array $params = []): VoucherCollection
     {
         $path     = $this->buildPath($restaurantId);
         $response = $this->client->request('GET', $path, $params);
@@ -40,7 +40,7 @@ class Voucher extends AbstractResource
      * @return VoucherModel
      * @throws ApiException
      */
-    public function get(string $voucherId, string $restaurantId = null): VoucherModel
+    public function get(string $voucherId, ?string $restaurantId = null): VoucherModel
     {
         $path     = $this->buildPath($restaurantId, $voucherId);
         $response = $this->client->request('GET', $path);
@@ -57,7 +57,7 @@ class Voucher extends AbstractResource
      * @throws ApiException
      * @throws ValidationException
      */
-    public function create(array $data, string $restaurantId = null): VoucherModel
+    public function create(array $data, ?string $restaurantId = null): VoucherModel
     {
         // Validate required parameters
         $this->validateRequired($data, ['voucher_code', 'type', 'start_date']);
@@ -109,7 +109,7 @@ class Voucher extends AbstractResource
      * @throws ApiException
      * @throws ValidationException
      */
-    public function update(string $voucherId, array $data, string $restaurantId = null): VoucherModel
+    public function update(string $voucherId, array $data, ?string $restaurantId = null): VoucherModel
     {
         // Validate type if provided
         if (isset($data['type']) && ! in_array($data['type'], ['discount', 'promotion'])) {
@@ -158,7 +158,7 @@ class Voucher extends AbstractResource
      * @return VoucherCollection
      * @throws ApiException
      */
-    public function search(array $params, string $restaurantId = null): VoucherCollection
+    public function search(array $params, ?string $restaurantId = null): VoucherCollection
     {
         $path     = $this->buildPath($restaurantId, 'search');
         $response = $this->client->request('GET', $path, $params);

@@ -7,7 +7,7 @@ use Nava\Dinlr\Exception\ValidationException;
 use Nava\Dinlr\Models\Customer as CustomerModel;
 use Nava\Dinlr\Models\CustomerCollection;
 
-class Customer extends AbstractResource implements ResourceInterface
+class Customer extends AbstractResource
 {
     protected $resourcePath = 'onlineorder/customers';
 
@@ -20,7 +20,7 @@ class Customer extends AbstractResource implements ResourceInterface
      * @throws ApiException
      * @throws ValidationException
      */
-    public function list(string $restaurantId = null, array $params = []): CustomerCollection
+    public function list($restaurantId = null, array $params = []): CustomerCollection
     {
         $this->validatePagination($params);
 
@@ -39,7 +39,7 @@ class Customer extends AbstractResource implements ResourceInterface
      * @throws ApiException
      * @throws ValidationException
      */
-    public function get(string $customerId, string $restaurantId = null): CustomerModel
+    public function get(string $customerId, ?string $restaurantId = null): CustomerModel
     {
         $this->validateString($customerId, 'Customer ID');
 
@@ -58,7 +58,7 @@ class Customer extends AbstractResource implements ResourceInterface
      * @throws ApiException
      * @throws ValidationException
      */
-    public function create(array $data, string $restaurantId = null): CustomerModel
+    public function create(array $data, ?string $restaurantId = null): CustomerModel
     {
         // Define validation rules
         $rules = [
@@ -69,6 +69,7 @@ class Customer extends AbstractResource implements ResourceInterface
 
         // Validate and sanitize all at once
         $sanitizedData = $this->validateAndSanitizeArray($data, $rules);
+        echo "\nSanitized Data: " . print_r($sanitizedData, true);
 
         $path     = $this->buildPath($restaurantId);
         $response = $this->client->request('POST', $path, $sanitizedData);
@@ -86,13 +87,27 @@ class Customer extends AbstractResource implements ResourceInterface
      * @throws ApiException
      * @throws ValidationException
      */
-    public function update(string $customerId, array $data, string $restaurantId = null): CustomerModel
+    public function update(string $customerId, array $data, ?string $restaurantId = null): CustomerModel
     {
+        // Ensure customer exists
+        $customer = $this->get($customerId);
+        $customerData = $customer->toArray();
+
+        // Only update fields that are provided in $data
+        // This allows partial updates without overwriting existing data
+        foreach ($customerData as $field => $value) {
+            if (array_key_exists($field, $data)) {
+                $customerData[$field] = $data[$field];
+            }
+        }
+
+        // echo "\nUpdating Customer Data: " . print_r($customerData, true);
+
         $this->validateString($customerId, 'Customer ID');
-        $this->validateCustomerData($data, false);
+        $this->validateCustomerData($customerData, false);
 
         $path     = $this->buildPath($restaurantId, $customerId);
-        $response = $this->client->request('PUT', $path, $data);
+        $response = $this->client->request('PUT', $path, $customerData instanceof CustomerModel ? $customerData->toArray() : $customerData);
 
         return new CustomerModel($response['data'] ?? []);
     }
@@ -106,7 +121,7 @@ class Customer extends AbstractResource implements ResourceInterface
      * @throws ApiException
      * @throws ValidationException
      */
-    public function search(array $params, string $restaurantId = null): CustomerCollection
+    public function search(array $params, ?string $restaurantId = null): CustomerCollection
     {
         $this->validateSearchParams($params);
 

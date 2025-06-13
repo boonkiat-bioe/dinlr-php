@@ -24,7 +24,7 @@ class Discount extends AbstractResource
      * @return DiscountCollection
      * @throws ApiException
      */
-    public function list(string $locationId = null, string $restaurantId = null, array $params = []): DiscountCollection
+    public function list(?string $locationId = null, ?string $restaurantId = null, array $params = []): DiscountCollection
     {
         $path = $this->buildPath($restaurantId);
 
@@ -39,18 +39,28 @@ class Discount extends AbstractResource
     }
 
     /**
-     * Get a single discount
+     * Get a single discount by filtering from list
      *
      * @param string $discountId Discount ID
-     * @param string|null $restaurantId Restaurant ID (optional, uses config if not provided)
+     * @param string|null $restaurantId
+     * @param string|null $locationId
      * @return DiscountModel
      * @throws ApiException
      */
-    public function get(string $discountId, string $restaurantId = null): DiscountModel
+    public function get(string $discountId, ?string $locationId = null, ?string $restaurantId = null): DiscountModel
     {
-        $path     = $this->buildPath($restaurantId, $discountId);
-        $response = $this->client->request('GET', $path);
+        // Get the DiscountCollection
+        $discounts = $this->list($locationId, $restaurantId);
 
-        return new DiscountModel($response['data'] ?? []);
+        // Loop through each Discount model in the collection
+        foreach ($discounts as $discount) {
+            if ($discount instanceof DiscountModel && $discount->getId() === $discountId) {
+                return $discount;
+            }
+        }
+
+        throw new ApiException("Discount with ID {$discountId} not found.");
     }
+
 }
+

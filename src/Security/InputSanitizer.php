@@ -2,6 +2,7 @@
 namespace Nava\Dinlr\Security;
 
 use Nava\Dinlr\Exception\ValidationException;
+use Normalizer;
 
 class InputSanitizer
 {

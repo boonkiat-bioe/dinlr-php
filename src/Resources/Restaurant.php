@@ -21,7 +21,7 @@ class Restaurant extends AbstractResource
      * @return RestaurantModel
      * @throws ApiException
      */
-    public function get(string $restaurantId = null): RestaurantModel
+    public function get(?string $restaurantId = null): RestaurantModel
     {
 
         $path     = $this->buildPath($restaurantId);

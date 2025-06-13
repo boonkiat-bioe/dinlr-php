@@ -24,7 +24,7 @@ class Promotion extends AbstractResource
      * @return PromotionCollection
      * @throws ApiException
      */
-    public function list(string $locationId = null, string $restaurantId = null, array $params = []): PromotionCollection
+    public function list(?string $locationId = null, ?string $restaurantId = null, array $params = []): PromotionCollection
     {
         $path = $this->buildPath($restaurantId);
 
@@ -46,11 +46,18 @@ class Promotion extends AbstractResource
      * @return PromotionModel
      * @throws ApiException
      */
-    public function get(string $promotionId, string $restaurantId = null): PromotionModel
+    public function get(string $promotionId, ?string $locationId = null, ?string $restaurantId = null): PromotionModel
     {
-        $path     = $this->buildPath($restaurantId, $promotionId);
-        $response = $this->client->request('GET', $path);
+        // Get the PromotionCollection
+        $promotions = $this->list($locationId, $restaurantId);
 
-        return new PromotionModel($response['data'] ?? []);
+        // Loop through each Promotion model in the collection
+        foreach ($promotions as $promotion) {
+            if ($promotion instanceof PromotionModel && $promotion->getId() === $promotionId) {
+                return $promotion;
+            }
+        }
+
+        throw new ApiException("Promotion with ID {$promotionId} not found.");
     }
 }

@@ -21,7 +21,7 @@ class ApiException extends Exception
      * @param \Throwable|null $previous Previous exception
      * @param array|null $errorData Additional error data
      */
-    public function __construct(string $message = "", int $code = 0, \Throwable $previous = null, array $errorData = null)
+    public function __construct(string $message = "", int $code = 0, ?\Throwable $previous = null, ?array $errorData = null)
     {
         parent::__construct($message, $code, $previous);
         $this->errorData = $errorData;

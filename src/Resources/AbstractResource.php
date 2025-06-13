@@ -10,6 +10,7 @@ abstract class AbstractResource
 {
     protected $client;
     protected $resourcePath;
+    protected $baseurl = 'https://api.dinlr.com/v1';
 
     public function __construct(Client $client)
     {
@@ -53,6 +54,8 @@ abstract class AbstractResource
         if ($maxLength && strlen($sanitized) > $maxLength) {
             throw new ValidationException("{$fieldName} cannot exceed {$maxLength} characters");
         }
+
+        return $sanitized;
     }
 
     /**
@@ -106,6 +109,13 @@ abstract class AbstractResource
                     break;
                 default:
                     $sanitized[$field] = $value;
+            }
+        }
+
+        // Add any additional fields that are not in the rules
+        foreach ($data as $field => $value) {
+            if (!array_key_exists($field, $rules)) {
+                $sanitized[$field] = $value;
             }
         }
 
@@ -216,7 +226,7 @@ abstract class AbstractResource
     /**
      * Build resource path with restaurant ID
      */
-    protected function buildPath(string $restaurantId = null, string $path = ''): string
+    protected function buildPath(?string $restaurantId = null, string $path = ''): string
     {
         if (null === $restaurantId) {
             $restaurantId = $this->client->getConfig()->getRestaurantId();
@@ -226,7 +236,7 @@ abstract class AbstractResource
             $restaurantId = $this->validateIdentifier($restaurantId, 'restaurant_id');
         }
 
-        $resourcePath = "/{$restaurantId}/{$this->resourcePath}";
+        $resourcePath = $this->baseurl . "/{$restaurantId}/{$this->resourcePath}";
 
         if (! empty($path)) {
             $path = str_replace(['../', './'], '', $path);

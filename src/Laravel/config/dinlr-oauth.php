@@ -10,7 +10,7 @@ return [
     | Dinlr's partner platform.
     |
     */
-    'client_id'     => env('DINLR_CLIENT_ID'),
+    'client_id'     => env('DINLR_CLIENT_ID', 'LBUEEETXDVCPYIIPMTVGDLEPLDCVSMIC'),
 
     /*
     |--------------------------------------------------------------------------
@@ -21,7 +21,7 @@ return [
     | with Dinlr's partner platform.
     |
     */
-    'client_secret' => env('DINLR_CLIENT_SECRET'),
+    'client_secret' => env('DINLR_CLIENT_SECRET', 'RHLPJRVFJJDWUFWOLGEPXCVIHTTDJEQG'),
 
     /*
     |--------------------------------------------------------------------------
@@ -32,7 +32,7 @@ return [
     | This must exactly match one of the redirect URIs you registered.
     |
     */
-    'redirect_uri'  => env('DINLR_REDIRECT_URI'),
+    'redirect_uri'  => env('DINLR_REDIRECT_URI', 'https://yins.3b.my/dinlrauthorize'),
 
     /*
     |--------------------------------------------------------------------------

@@ -10,6 +10,7 @@ class RestaurantSettingsTest extends TestCase
      * @var array
      */
     protected $testConfig;
+    protected static $locationId;
 
     /**
      * Set up test environment
@@ -45,6 +46,7 @@ class RestaurantSettingsTest extends TestCase
         echo "\n• Restaurant Name: " . $restaurant->getName();
         echo "\n• Currency: " . $restaurant->getCurrency();
         echo "\n✓ Restaurant details retrieved successfully";
+        echo "\n--------------------------------------------------------------\n\n";
 
         $this->assertNotEmpty($restaurant->getId());
         $this->assertNotEmpty($restaurant->getName());
@@ -62,6 +64,12 @@ class RestaurantSettingsTest extends TestCase
         $client    = new Client($this->testConfig);
         $locations = $client->locations()->list();
 
+        if (count($locations) > 0) {
+                self::$locationId = $locations->first()->getId();
+        } else {
+            $this->markTestSkipped("No locations found for testing.");
+        }
+
         echo "\n• Total locations: " . count($locations);
 
         if (count($locations) > 0) {
@@ -71,6 +79,7 @@ class RestaurantSettingsTest extends TestCase
         }
 
         echo "\n✓ Locations retrieved successfully";
+        echo "\n--------------------------------------------------------------\n\n";
 
         $this->assertInstanceOf(\Nava\Dinlr\Models\LocationCollection::class, $locations);
     }
@@ -85,13 +94,8 @@ class RestaurantSettingsTest extends TestCase
 
         $client = new Client($this->testConfig);
 
-        // Use the first location ID if available
-        $locationId = null;
-        $locations  = $client->locations()->list();
-        if (count($locations) > 0) {
-            $locationId = $locations->first()->getId();
-            echo "\n• Using location ID: " . $locationId;
-        }
+        $locationId = self::$locationId;
+        echo "\n• Using location ID: " . self::$locationId;
 
         $diningOptions = $client->diningOptions()->list($locationId);
 
@@ -104,6 +108,8 @@ class RestaurantSettingsTest extends TestCase
         }
 
         echo "\n✓ Dining options retrieved successfully";
+        echo "\n--------------------------------------------------------------\n\n";
+
 
         $this->assertInstanceOf(\Nava\Dinlr\Models\DiningOptionCollection::class, $diningOptions);
     }
@@ -118,13 +124,8 @@ class RestaurantSettingsTest extends TestCase
 
         $client = new Client($this->testConfig);
 
-        // Use the first location ID if available
-        $locationId = null;
-        $locations  = $client->locations()->list();
-        if (count($locations) > 0) {
-            $locationId = $locations->first()->getId();
-            echo "\n• Using location ID: " . $locationId;
-        }
+        $locationId = self::$locationId;
+        echo "\n• Using location ID: " . self::$locationId;
 
         $paymentMethods = $client->paymentMethods()->list($locationId);
 
@@ -137,6 +138,7 @@ class RestaurantSettingsTest extends TestCase
         }
 
         echo "\n✓ Payment methods retrieved successfully";
+        echo "\n--------------------------------------------------------------\n\n";
 
         $this->assertInstanceOf(\Nava\Dinlr\Models\PaymentMethodCollection::class, $paymentMethods);
     }
@@ -151,13 +153,8 @@ class RestaurantSettingsTest extends TestCase
 
         $client = new Client($this->testConfig);
 
-        // Use the first location ID if available
-        $locationId = null;
-        $locations  = $client->locations()->list();
-        if (count($locations) > 0) {
-            $locationId = $locations->first()->getId();
-            echo "\n• Using location ID: " . $locationId;
-        }
+        $locationId = self::$locationId;
+        echo "\n• Using location ID: " . self::$locationId;
 
         $charges = $client->charges()->list($locationId);
 
@@ -170,6 +167,7 @@ class RestaurantSettingsTest extends TestCase
         }
 
         echo "\n✓ Charges retrieved successfully";
+        echo "\n--------------------------------------------------------------\n\n";
 
         $this->assertInstanceOf(\Nava\Dinlr\Models\ChargeCollection::class, $charges);
     }
@@ -181,15 +179,17 @@ class RestaurantSettingsTest extends TestCase
     {
         echo "\n\nSTEP 6: Testing deprecated get settings endpoint";
         echo "\n--------------------------------------------------------------";
-        echo "\n⚠️ This test uses a deprecated endpoint that may be removed in future API versions.";
+        echo "\n⚠️ This test uses a deprecated endpoint that may be removed in future API versions.\n";
 
         $client = new Client($this->testConfig);
+        $baseUrl = $this->testConfig['api_url'];
 
         // Make a direct request to the deprecated endpoint
-        $response = $client->request('GET', '/' . $this->testConfig['restaurant_id'] . '/onlineorder/get-settings');
+        $response = $client->request('GET', $baseUrl . '/' . $this->testConfig['restaurant_id'] . '/onlineorder/get-settings');
 
         echo "\n• Response data keys: " . implode(', ', array_keys($response['data'] ?? []));
         echo "\n✓ Settings retrieved successfully";
+        echo "\n--------------------------------------------------------------\n\n";
 
         $this->assertIsArray($response);
         $this->assertArrayHasKey('data', $response);

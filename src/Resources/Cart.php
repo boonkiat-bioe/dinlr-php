@@ -9,7 +9,7 @@ class Cart extends AbstractResource
 {
     protected $resourcePath = 'onlineorder/cart';
 
-    public function calculate(array $cartData, string $restaurantId = null): CartSummary
+    public function calculate(array $cartData, ?string $restaurantId = null): CartSummary
     {
         $this->validateRequired($cartData, ['location', 'items']);
 
@@ -23,7 +23,7 @@ class Cart extends AbstractResource
         return new CartSummary($response['data'] ?? []);
     }
 
-    public function submit(array $cartData, string $restaurantId = null): OrderModel
+    public function submit(array $cartData, ?string $restaurantId = null): OrderModel
     {
         $this->validateRequired($cartData, ['location', 'items']);
 

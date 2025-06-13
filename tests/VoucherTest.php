@@ -67,6 +67,7 @@ class VoucherTest extends TestCase
         }
 
         echo "\n✓ Vouchers retrieved successfully";
+        echo "\n--------------------------------------------------------------\n\n";
 
         $this->assertInstanceOf(\Nava\Dinlr\Models\VoucherCollection::class, $vouchers);
     }
@@ -96,6 +97,7 @@ class VoucherTest extends TestCase
             echo "\n• Has unlimited redemptions: " . ($voucher->hasUnlimitedRedemptions() ? 'Yes' : 'No');
             echo "\n• Has no end date: " . ($voucher->hasNoEndDate() ? 'Yes' : 'No');
             echo "\n✓ Single voucher retrieved successfully";
+            echo "\n --------------------------------------------------------------\n\n";
 
             $this->assertInstanceOf(\Nava\Dinlr\Models\Voucher::class, $voucher);
             $this->assertEquals($voucherId, $voucher->getId());
@@ -134,6 +136,7 @@ class VoucherTest extends TestCase
             }
 
             echo "\n✓ Voucher search by code working correctly";
+            echo "\n--------------------------------------------------------------\n\n";
 
             $this->assertInstanceOf(\Nava\Dinlr\Models\VoucherCollection::class, $searchResults);
             $this->assertGreaterThan(0, count($searchResults));
@@ -181,6 +184,7 @@ class VoucherTest extends TestCase
             }
 
             echo "\n✓ Voucher search by customer working correctly";
+            echo "\n--------------------------------------------------------------\n\n";
 
             $this->assertInstanceOf(\Nava\Dinlr\Models\VoucherCollection::class, $searchResults);
         } else {
@@ -233,6 +237,7 @@ class VoucherTest extends TestCase
                 echo "\n• Type: " . $newVoucher->getType();
                 echo "\n• Max redemptions: " . $newVoucher->getMaxRedemptions();
                 echo "\n✓ Voucher creation successful";
+                echo "\n--------------------------------------------------------------\n\n";
 
                 $this->assertInstanceOf(\Nava\Dinlr\Models\Voucher::class, $newVoucher);
                 $this->assertEquals($voucherCode, $newVoucher->getVoucherCode());
@@ -241,6 +246,7 @@ class VoucherTest extends TestCase
             } catch (\Nava\Dinlr\Exception\ApiException $e) {
                 echo "\n• API Error: " . $e->getMessage();
                 echo "\n• Note: Create voucher may require specific permissions";
+                echo "\n -----------------------------------------------------------------\n\n";
                 $this->markTestSkipped('Unable to create voucher: ' . $e->getMessage());
             }
         } else {
@@ -277,6 +283,10 @@ class VoucherTest extends TestCase
             echo "\n• Voucher ID: " . $voucherToUpdate->getId();
 
             $updateData = [
+                'voucher_code'    => $voucherToUpdate->getVoucherCode(),
+                'type'           => $voucherToUpdate->getType(),
+                'discount'        => $voucherToUpdate->getDiscountId(),
+                'start_date'      => $voucherToUpdate->getStartDate(),
                 'max_redemptions' => 5,
             ];
 
@@ -286,6 +296,7 @@ class VoucherTest extends TestCase
                 echo "\n• Voucher updated successfully";
                 echo "\n• New max redemptions: " . $updatedVoucher->getMaxRedemptions();
                 echo "\n✓ Voucher update successful";
+                echo "\n--------------------------------------------------------------\n\n";
 
                 $this->assertInstanceOf(\Nava\Dinlr\Models\Voucher::class, $updatedVoucher);
                 $this->assertEquals(5, $updatedVoucher->getMaxRedemptions());
@@ -293,6 +304,7 @@ class VoucherTest extends TestCase
             } catch (\Nava\Dinlr\Exception\ApiException $e) {
                 echo "\n• API Error: " . $e->getMessage();
                 echo "\n• Note: Update voucher may require specific permissions";
+                echo "\n -----------------------------------------------------------------\n\n";
                 $this->markTestSkipped('Unable to update voucher: ' . $e->getMessage());
             }
         } else {
@@ -323,6 +335,7 @@ class VoucherTest extends TestCase
 
         echo "\n• Vouchers returned: " . count($vouchers) . " (max " . $params['limit'] . ")";
         echo "\n✓ Query parameters working correctly";
+        echo "\n--------------------------------------------------------------\n\n";
 
         $this->assertLessThanOrEqual($params['limit'], count($vouchers));
     }
@@ -379,5 +392,6 @@ class VoucherTest extends TestCase
         }
 
         echo "\n✓ All validation errors handled correctly";
+        echo "\n--------------------------------------------------------------\n\n";
     }
 }

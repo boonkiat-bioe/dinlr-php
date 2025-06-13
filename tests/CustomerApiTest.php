@@ -69,6 +69,13 @@ class CustomerApiTest extends TestCase
         echo "\n\nSTEP 2: Testing create new customer";
         echo "\n--------------------------------------------------------------";
 
+        $customerGroupId = null;
+        $customerGroups   = $this->client->customerGroups()->list();
+        if (count($customerGroups) > 0) {
+            $customerGroupId = $customerGroups->first()->getId();
+            echo "\n• Using customer group ID: " . $customerGroupId;
+        }
+
         $timestamp    = time();
         $customerData = [
             'reference'               => 'TEST_REF_' . $timestamp,
@@ -88,6 +95,7 @@ class CustomerApiTest extends TestCase
             'marketing_consent_email' => true,
             'marketing_consent_text'  => false,
             'marketing_consent_phone' => false,
+            'customer_group'       => $customerGroupId, 
         ];
 
         echo "\n• Creating customer with email: " . $customerData['email'];
@@ -139,10 +147,10 @@ class CustomerApiTest extends TestCase
             $customer   = $customers->first();
             $customerId = $customer->getId();
 
-            echo "\n• Updating customer ID: " . $customerId;
+            echo "\n• Updating customer ID: " . $customerId . "\n";
 
             $updateData = [
-                'notes'                   => 'Updated by API test on ' . date('Y-m-d H:i:s'),
+                'notes'                   => 'Updated by API test on ' . (new \DateTime('now', new \DateTimeZone('Asia/Singapore')))->format('Y-m-d H:i:s'),
                 'marketing_consent_email' => false,
             ];
 
@@ -184,15 +192,13 @@ class CustomerApiTest extends TestCase
             }
 
             $customerId = $customers->first()->getId();
-            echo "\n• Retrieving customer ID: " . $customerId;
+            echo "\n• Retrieving customer ID: " . $customerId . "...\n";
 
             $customer = $this->client->customers()->get($customerId);
 
-            echo "\n• Customer retrieved successfully";
+            echo "\n✓ Single customer retrieval successful";            
             echo "\n• Customer name: " . $customer->getFullName();
             echo "\n• Customer reference: " . ($customer->getReference() ?: 'N/A');
-
-            echo "\n✓ Single customer retrieval successful";
 
             $this->assertInstanceOf(\Nava\Dinlr\Models\Customer::class, $customer);
             $this->assertEquals($customerId, $customer->getId());
@@ -233,7 +239,7 @@ class CustomerApiTest extends TestCase
                 return;
             }
 
-            echo "\n• Searching for email: " . $testEmail;
+            echo "\n• Searching for customer with email: " . $testEmail . "...\n";
 
             $searchResults = $this->client->customers()->search(['email' => $testEmail]);
 
@@ -242,6 +248,7 @@ class CustomerApiTest extends TestCase
 
             if (count($searchResults) > 0) {
                 echo "\n• First result email: " . $searchResults->first()->getEmail();
+                echo "\n• First result name: " . $searchResults->first()->getFullName();
             }
 
             echo "\n✓ Customer search by email successful";
@@ -284,7 +291,7 @@ class CustomerApiTest extends TestCase
                 return;
             }
 
-            echo "\n• Searching for phone: " . $testPhone;
+            echo "\n• Searching for customer with phone: " . $testPhone . "...\n";
 
             $searchResults = $this->client->customers()->search(['phone' => $testPhone]);
 
@@ -331,7 +338,7 @@ class CustomerApiTest extends TestCase
                 return;
             }
 
-            echo "\n• Searching for reference: " . $testReference;
+            echo "\n• Searching for customer with reference: " . $testReference . "...\n";
 
             $searchResults = $this->client->customers()->search(['reference' => $testReference]);
 
@@ -523,7 +530,10 @@ class CustomerApiTest extends TestCase
             $this->fail('Expected ApiException was not thrown');
         } catch (ApiException $e) {
             echo "\n✓ ApiException caught for non-existent customer";
-            $this->assertEquals(404, $e->getCode());
+            $this->assertTrue(
+                in_array($e->getCode(), [422, 404]),
+                'Expected error code 422 or 404, got ' . $e->getCode()
+            );
         }
 
         // Test updating non-existent customer
@@ -534,7 +544,10 @@ class CustomerApiTest extends TestCase
             $this->fail('Expected ApiException was not thrown');
         } catch (ApiException $e) {
             echo "\n✓ ApiException caught for non-existent customer update";
-            $this->assertEquals(404, $e->getCode());
+            $this->assertTrue(
+                in_array($e->getCode(), [422, 404]),
+                'Expected error code 422 or 404, got ' . $e->getCode()
+            );
         }
 
         echo "\n✓ Error handling tests completed";

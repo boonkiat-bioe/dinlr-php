@@ -22,13 +22,16 @@ class Menu extends AbstractResource
      * @return MenuCollection
      * @throws ApiException
      */
-    public function list(string $locationId = null, string $restaurantId = null): MenuCollection
+    public function list(?string $locationId = null, ?string $restaurantId = null): MenuCollection
     {
         $path = $this->buildPath($restaurantId);
 
         $params = [];
         if (null !== $locationId) {
             $params['location_id'] = $locationId;
+        }
+        else {
+            throw new ApiException('Location ID is required to list menus');
         }
 
         $response = $this->client->request('GET', $path, $params);

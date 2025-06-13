@@ -52,7 +52,7 @@ return array_merge($config, [
         'state'          => 'fromNava',
         'callback'       => [
             'code'          => 'test_auth_code',
-            'restaurant_id' => getenv('DINLR_TEST_RESTAURANT_ID') ?: 'dinlr-b1',
+            'restaurant_id' => 'test_restaurant_id',
         ],
         'token_response' => [
             'access_token'  => 'test_access_token',

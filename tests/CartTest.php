@@ -10,6 +10,7 @@ class CartTest extends TestCase
 {
     protected $testConfig;
     protected $client;
+    protected static $locationId;
 
     protected function setUp(): void
     {
@@ -22,6 +23,18 @@ class CartTest extends TestCase
         $this->testConfig = require __DIR__ . '/config.php';
         $this->client     = new Client($this->testConfig);
 
+        // Retrieve location ID once and reuse it, to avoid API rate limits
+        if (self::$locationId === null) {
+            $locations = $this->client->locations()->list();
+
+            if (count($locations) > 0) {
+                self::$locationId = $locations->first()->getId();
+                echo "\n• Using location ID: " . self::$locationId;
+            } else {
+                $this->markTestSkipped("No locations found for testing.");
+            }
+        }
+
         echo "\n• API URL: " . $this->testConfig['api_url'];
         echo "\n• Restaurant ID: " . $this->testConfig['restaurant_id'];
         echo "\n--------------------------------------------------------------";
@@ -33,13 +46,7 @@ class CartTest extends TestCase
         echo "\n--------------------------------------------------------------";
 
         try {
-            $locations = $this->client->locations()->list();
-            if (count($locations) === 0) {
-                $this->markTestSkipped('No locations available');
-                return;
-            }
-
-            $locationId = $locations->first()->getId();
+            $locationId = self::$locationId;
             $items      = $this->client->items()->list($locationId);
 
             if (count($items) === 0) {
@@ -94,9 +101,7 @@ class CartTest extends TestCase
         echo "\n--------------------------------------------------------------";
 
         try {
-            $locations  = $this->client->locations()->list();
-            $locationId = $locations->first()->getId();
-
+            $locationId = self::$locationId;
             $items     = $this->client->items()->list($locationId);
             $discounts = $this->client->discounts()->list($locationId);
 
@@ -146,8 +151,7 @@ class CartTest extends TestCase
         echo "\n--------------------------------------------------------------";
 
         try {
-            $locations  = $this->client->locations()->list();
-            $locationId = $locations->first()->getId();
+            $locationId = self::$locationId;
 
             $items = $this->client->items()->list($locationId);
             if (count($items) === 0) {

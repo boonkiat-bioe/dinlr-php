@@ -2,6 +2,7 @@
 namespace Nava\Dinlr\Tests;
 
 use Nava\Dinlr\Client;
+use Nava\Dinlr\Util\SharedCache;
 use PHPUnit\Framework\TestCase;
 
 class MenuTest extends TestCase
@@ -43,8 +44,10 @@ class MenuTest extends TestCase
         // Use the first location ID if available
         $locationId = null;
         $locations  = $client->locations()->list();
+        SharedCache::$locations = $locations;
         if (count($locations) > 0) {
             $locationId = $locations->first()->getId();
+            SharedCache::$locationId = $locationId;
             echo "\n• Using location ID: " . $locationId;
         }
 
@@ -95,6 +98,7 @@ class MenuTest extends TestCase
         }
 
         echo "\n\n✓ Menus retrieved successfully";
+        echo "\n---------------------------------------------------------------\n\n";
 
         $this->assertInstanceOf(\Nava\Dinlr\Models\MenuCollection::class, $menus);
     }
@@ -109,11 +113,7 @@ class MenuTest extends TestCase
 
         $client = new Client($this->testConfig);
 
-        $locationId = null;
-        $locations  = $client->locations()->list();
-        if (count($locations) > 0) {
-            $locationId = $locations->first()->getId();
-        }
+        $locationId = SharedCache::$locationId;
 
         $menus = $client->menu()->list($locationId);
 
@@ -152,11 +152,7 @@ class MenuTest extends TestCase
 
         $client = new Client($this->testConfig);
 
-        $locationId = null;
-        $locations  = $client->locations()->list();
-        if (count($locations) > 0) {
-            $locationId = $locations->first()->getId();
-        }
+        $locationId = SharedCache::$locationId;
 
         $menus = $client->menu()->list($locationId);
 
@@ -218,9 +214,11 @@ class MenuTest extends TestCase
             $menus = $client->menu()->list();
             echo "\n• Total menus: " . count($menus);
             echo "\n✓ Menu API works without location ID";
+            $this->assertInstanceOf(\Nava\Dinlr\Models\MenuCollection::class, $menus);
         } catch (\Nava\Dinlr\Exception\ApiException $e) {
             echo "\n• API requires location ID: " . $e->getMessage();
             echo "\n✓ API correctly requires location ID";
+            $this->assertStringContainsString('Location', $e->getMessage());
         }
     }
 
@@ -234,11 +232,7 @@ class MenuTest extends TestCase
 
         $client = new Client($this->testConfig);
 
-        $locationId = null;
-        $locations  = $client->locations()->list();
-        if (count($locations) > 0) {
-            $locationId = $locations->first()->getId();
-        }
+        $locationId = SharedCache::$locationId;
 
         $menus = $client->menu()->list($locationId);
 

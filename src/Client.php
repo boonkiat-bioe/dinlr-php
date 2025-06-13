@@ -103,7 +103,7 @@ class Client
                 $options['json'] = $params;
             }
         }
-
+        echo "\nConfig: $method: " . json_encode($this->httpClient->getConfig()) . $endpoint . "\n";
         try {
             $response = $this->httpClient->request($method, $endpoint, $options);
 
@@ -111,6 +111,8 @@ class Client
             $data = json_decode($body, true);
 
             if ($response->getStatusCode() >= 400) {
+                echo "\n" . $response->getStatusCode() . 
+                "\n";
                 throw new ApiException(
                     $data['message'] ?? 'API error',
                     $response->getStatusCode(),
@@ -474,5 +476,24 @@ class Client
     {
         $sensitiveKeys = ['access_token', 'password', 'secret', 'key'];
         return $this->recursiveRedact($data, $sensitiveKeys);
+    }
+
+    /**
+     * Recursively redacts sensitive keys in an array.
+     *
+     * @param array $data
+     * @param array $sensitiveKeys
+     * @return array
+     */
+    private function recursiveRedact(array $data, array $sensitiveKeys): array
+    {
+        foreach ($data as $key => &$value) {
+            if (in_array($key, $sensitiveKeys, true)) {
+                $value = 'REDACTED';
+            } elseif (is_array($value)) {
+                $value = $this->recursiveRedact($value, $sensitiveKeys);
+            }
+        }
+        return $data;
     }
 }

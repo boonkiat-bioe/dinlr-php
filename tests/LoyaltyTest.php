@@ -1,4 +1,4 @@
-  <?php
+<?php
 namespace Nava\Dinlr\Tests;
 
 use Nava\Dinlr\Client;

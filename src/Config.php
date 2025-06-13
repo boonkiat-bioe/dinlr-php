@@ -19,6 +19,11 @@ class Config
     private $apiUrl = 'https://api.dinlr.com/v1';
 
     /**
+     * @var string
+     */
+    private $authBaseUrl = 'https://backoffice.dinlr.com';
+
+    /**
      * @var int
      */
     private $timeout = 30;
@@ -46,6 +51,10 @@ class Config
 
         if (isset($config['api_url'])) {
             $this->setApiUrl($config['api_url']);
+        }
+
+        if (isset($config['auth_base_url'])) {
+            $this->setAuthBaseUrl($config['auth_base_url']);
         }
 
         if (isset($config['timeout'])) {
@@ -108,6 +117,28 @@ class Config
     public function getApiUrl(): string
     {
         return $this->apiUrl;
+    }
+
+    /**
+     * Set the Auth Base URL
+     *
+     * @param string $authBaseUrl
+     * @return self
+     */
+    public function setAuthBaseUrl(string $authBaseUrl): self
+    {
+        $this->authBaseUrl = rtrim($authBaseUrl, '/');
+        return $this;
+    }
+
+    /**
+     * Get the Auth Base URL
+     *
+     * @return string
+     */
+    public function getAuthBaseUrl(): string
+    {
+        return $this->authBaseUrl;
     }
 
     /**

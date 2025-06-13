@@ -20,12 +20,13 @@ class Item extends AbstractResource implements ResourceInterface
      * @throws ApiException
      * @throws ValidationException
      */
-    public function list(string $restaurantId = null, array $params = []): ItemCollection
+    public function list(?string $locationId = null, ?string $restaurantId = null, array $params = []): ItemCollection
     {
         $this->validatePagination($params);
 
-        if (isset($params['location_id'])) {
-            $this->validateString($params['location_id'], 'Location ID');
+        // Add location_id to params if provided
+        if (null !== $locationId) {
+            $params['location_id'] = $locationId;
         }
 
         $path     = $this->buildPath($restaurantId);
@@ -42,7 +43,7 @@ class Item extends AbstractResource implements ResourceInterface
      * @throws ApiException
      * @throws ValidationException
      */
-    public function get(string $itemId, string $restaurantId = null): ItemModel
+    public function get(string $itemId, ?string $restaurantId = null): ItemModel
     {
         $this->validateString($itemId, 'Item ID');
 
@@ -62,9 +63,9 @@ class Item extends AbstractResource implements ResourceInterface
      * @throws ApiException
      * @throws ValidationException
      */
-    public function listForLocation(string $locationId, string $restaurantId = null, array $params = []): ItemCollection
+    public function listForLocation(string $locationId, ?string $restaurantId = null, array $params = []): ItemCollection
     {
         $params['location_id'] = $locationId;
-        return $this->list($restaurantId, $params);
+        return $this->list($restaurantId, $locationId, $params);
     }
 }

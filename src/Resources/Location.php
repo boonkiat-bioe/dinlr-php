@@ -23,9 +23,10 @@ class Location extends AbstractResource
      * @return LocationCollection
      * @throws ApiException
      */
-    public function list(string $restaurantId = null, array $params = []): LocationCollection
+    public function list(?string $restaurantId = null, array $params = []): LocationCollection
     {
         $path     = $this->buildPath($restaurantId);
+        echo "\nXlient: " . $path;
         $response = $this->client->request('GET', $path, $params);
 
         return new LocationCollection($response['data'] ?? []);
@@ -39,7 +40,7 @@ class Location extends AbstractResource
      * @return LocationModel
      * @throws ApiException
      */
-    public function get(string $locationId, string $restaurantId = null): LocationModel
+    public function get(string $locationId, ?string $restaurantId = null): LocationModel
     {
         $path     = $this->buildPath($restaurantId, $locationId);
         $response = $this->client->request('GET', $path);

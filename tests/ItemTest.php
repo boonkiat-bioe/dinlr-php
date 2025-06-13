@@ -10,6 +10,7 @@ class ItemTest extends TestCase
      * @var array
      */
     protected $testConfig;
+    protected static $locationId;
 
     /**
      * Set up test environment
@@ -26,6 +27,25 @@ class ItemTest extends TestCase
         $this->testConfig = require __DIR__ . '/config.php';
 
         echo "\n• API URL: " . $this->testConfig['api_url'];
+
+        // Retrieve location ID once and reuse it, to avoid API rate limits
+        if (self::$locationId === null) {
+            $client = new Client($this->testConfig);
+            try {
+                $locations  = $client->locations()->list();
+            } catch (\Nava\Dinlr\Exception\ApiException $ex) {
+                echo "\n❌ Error retrieving locations: " . $ex->getMessage() . ' ' . $ex->getCode();
+                throw $ex;
+            }
+
+            if (count($locations) > 0) {
+                self::$locationId = $locations->first()->getId();
+                echo "\n• Using location ID: " . self::$locationId;
+            } else {
+                $this->markTestSkipped("No locations found for testing.");
+            }
+        }
+
         echo "\n• Restaurant ID: " . $this->testConfig['restaurant_id'];
         echo "\n--------------------------------------------------------------";
     }
@@ -39,14 +59,7 @@ class ItemTest extends TestCase
         echo "\n--------------------------------------------------------------";
 
         $client = new Client($this->testConfig);
-
-        // Use the first location ID if available
-        $locationId = null;
-        $locations  = $client->locations()->list();
-        if (count($locations) > 0) {
-            $locationId = $locations->first()->getId();
-            echo "\n• Using location ID: " . $locationId;
-        }
+        $locationId = self::$locationId;
 
         $items = $client->items()->list($locationId);
 
@@ -71,6 +84,7 @@ class ItemTest extends TestCase
         }
 
         echo "\n✓ Items retrieved successfully";
+        echo "\n--------------------------------------------------------------\n\n";
 
         $this->assertInstanceOf(\Nava\Dinlr\Models\ItemCollection::class, $items);
     }
@@ -84,15 +98,7 @@ class ItemTest extends TestCase
         echo "\n--------------------------------------------------------------";
 
         $client = new Client($this->testConfig);
-
-        // Use the first location ID if available
-        $locationId = null;
-        $locations  = $client->locations()->list();
-        if (count($locations) > 0) {
-            $locationId = $locations->first()->getId();
-            echo "\n• Using location ID: " . $locationId;
-        }
-
+        $locationId = self::$locationId;
         $modifiers = $client->modifiers()->list($locationId);
 
         echo "\n• Total modifiers: " . count($modifiers);

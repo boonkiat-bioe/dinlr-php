@@ -10,7 +10,7 @@ use Nava\Dinlr\Models\OrderCollection;
 /**
  * Order resource with comprehensive validation
  */
-class Order extends AbstractResource implements ResourceInterface
+class Order extends AbstractResource 
 {
     /**
      * @var string

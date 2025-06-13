@@ -10,6 +10,7 @@ class DiscountPromotionTest extends TestCase
      * @var array
      */
     protected $testConfig;
+    protected static $locationId;
 
     /**
      * Set up test environment
@@ -24,6 +25,19 @@ class DiscountPromotionTest extends TestCase
 
         // Load config
         $this->testConfig = require __DIR__ . '/config.php';
+
+        // Retrieve location ID once and reuse it, to avoid API rate limits
+        if (self::$locationId === null) {
+            $client = new Client($this->testConfig);
+            $locations = $client->locations()->list();
+
+            if (count($locations) > 0) {
+                self::$locationId = $locations->first()->getId();
+                echo "\n• Using location ID: " . self::$locationId;
+            } else {
+                $this->markTestSkipped("No locations found for testing.");
+            }
+        }
 
         echo "\n• API URL: " . $this->testConfig['api_url'];
         echo "\n• Restaurant ID: " . $this->testConfig['restaurant_id'];
@@ -40,13 +54,7 @@ class DiscountPromotionTest extends TestCase
 
         $client = new Client($this->testConfig);
 
-        // Use the first location ID if available
-        $locationId = null;
-        $locations  = $client->locations()->list();
-        if (count($locations) > 0) {
-            $locationId = $locations->first()->getId();
-            echo "\n• Using location ID: " . $locationId;
-        }
+        $locationId = self::$locationId;
 
         $discounts = $client->discounts()->list($locationId);
 
@@ -74,7 +82,8 @@ class DiscountPromotionTest extends TestCase
             }
         }
 
-        echo "\n✓ Discounts retrieved successfully";
+        echo "\n✓ Discounts retrieved successfully\n";
+        echo "\n--------------------------------------------------------------\n\n";
 
         $this->assertInstanceOf(\Nava\Dinlr\Models\DiscountCollection::class, $discounts);
     }
@@ -89,20 +98,22 @@ class DiscountPromotionTest extends TestCase
 
         $client = new Client($this->testConfig);
 
-        // First get all discounts
-        $locationId = null;
-        $locations  = $client->locations()->list();
-        if (count($locations) > 0) {
-            $locationId = $locations->first()->getId();
-        }
+        $locationId = self::$locationId;
 
+        // First get all discounts
         $discounts = $client->discounts()->list($locationId);
 
         if (count($discounts) > 0) {
             $discountId = $discounts->first()->getId();
-            echo "\n• Testing with discount ID: " . $discountId;
-
-            $discount = $client->discounts()->get($discountId);
+            echo "\n• Testing with discount ID: " . $discountId . "\n";
+            
+            try {
+                $discount = $client->discounts()->get($discountId, $locationId);
+            } catch (\Exception $e) {
+                echo "\n✗ Failed to get discount: " . $e->getMessage();
+                echo "\n--------------------------------------------------------------\n\n";
+                $this->fail('404 or other error while fetching discount');
+            } 
 
             echo "\n• Discount name: " . $discount->getName();
             echo "\n• Type: " . $discount->getType();
@@ -110,6 +121,7 @@ class DiscountPromotionTest extends TestCase
             echo "\n• Is price discount: " . ($discount->isPriceDiscount() ? "Yes" : "No");
             echo "\n• Is open discount: " . ($discount->isOpenDiscount() ? "Yes" : "No");
             echo "\n✓ Single discount retrieved successfully";
+            echo "\n--------------------------------------------------------------\n\n";
 
             $this->assertInstanceOf(\Nava\Dinlr\Models\Discount::class, $discount);
             $this->assertEquals($discountId, $discount->getId());
@@ -128,13 +140,7 @@ class DiscountPromotionTest extends TestCase
 
         $client = new Client($this->testConfig);
 
-        // Use the first location ID if available
-        $locationId = null;
-        $locations  = $client->locations()->list();
-        if (count($locations) > 0) {
-            $locationId = $locations->first()->getId();
-            echo "\n• Using location ID: " . $locationId;
-        }
+        $locationId = self::$locationId;
 
         $promotions = $client->promotions()->list($locationId);
 
@@ -152,6 +158,7 @@ class DiscountPromotionTest extends TestCase
         }
 
         echo "\n✓ Promotions retrieved successfully";
+        echo "\n--------------------------------------------------------------\n\n";
 
         $this->assertInstanceOf(\Nava\Dinlr\Models\PromotionCollection::class, $promotions);
     }
@@ -166,20 +173,15 @@ class DiscountPromotionTest extends TestCase
 
         $client = new Client($this->testConfig);
 
-        // First get all promotions
-        $locationId = null;
-        $locations  = $client->locations()->list();
-        if (count($locations) > 0) {
-            $locationId = $locations->first()->getId();
-        }
+        $locationId = self::$locationId;
 
         $promotions = $client->promotions()->list($locationId);
 
         if (count($promotions) > 0) {
             $promotionId = $promotions->first()->getId();
-            echo "\n• Testing with promotion ID: " . $promotionId;
+            echo "\n• Testing with promotion ID: " . $promotionId . "\n";
 
-            $promotion = $client->promotions()->get($promotionId);
+            $promotion = $client->promotions()->get($promotionId, $locationId);
 
             echo "\n• Promotion name: " . $promotion->getName();
             echo "\n• Type: " . $promotion->getType();
@@ -187,6 +189,7 @@ class DiscountPromotionTest extends TestCase
             echo "\n• Is voucher promotion: " . ($promotion->isVoucherPromotion() ? "Yes" : "No");
             echo "\n• Has no end date: " . ($promotion->hasNoEndDate() ? "Yes" : "No");
             echo "\n✓ Single promotion retrieved successfully";
+            echo "\n--------------------------------------------------------------\n\n";
 
             $this->assertInstanceOf(\Nava\Dinlr\Models\Promotion::class, $promotion);
             $this->assertEquals($promotionId, $promotion->getId());
@@ -205,11 +208,7 @@ class DiscountPromotionTest extends TestCase
 
         $client = new Client($this->testConfig);
 
-        $locationId = null;
-        $locations  = $client->locations()->list();
-        if (count($locations) > 0) {
-            $locationId = $locations->first()->getId();
-        }
+        $locationId = self::$locationId;
 
         // Test with pagination
         $params = [
@@ -224,6 +223,8 @@ class DiscountPromotionTest extends TestCase
 
         echo "\n• Promotions returned: " . count($promotions) . " (max " . $params['limit'] . ")";
         echo "\n✓ Query parameters working correctly";
+        echo "\n--------------------------------------------------------------\n\n";
+
 
         $this->assertLessThanOrEqual($params['limit'], count($promotions));
     }

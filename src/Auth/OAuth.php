@@ -48,6 +48,8 @@ class OAuth
         $this->clientSecret = $clientSecret;
         $this->redirectUri  = $redirectUri;
 
+        echo "\nOAuth initialized with Client ID: {$this->clientId}";        
+
         if ($apiUrl) {
             $this->apiUrl = rtrim($apiUrl, '/');
         }
@@ -87,6 +89,7 @@ class OAuth
                 'code'          => $code,
                 'client_id'     => $this->clientId,
                 'client_secret' => $this->clientSecret,
+                // 'redirect_uri'  => $this->redirectUri,
                 'grant_type'    => 'authorization_code',
             ],
             'http_errors' => false,
@@ -96,6 +99,8 @@ class OAuth
         $data = json_decode($body, true);
 
         if ($response->getStatusCode() >= 400 || ! isset($data['access_token'])) {
+            // Log the full response for debugging
+            error_log('OAuth getAccessToken failed: ' . $body);
             throw new ApiException(
                 $data['error_description'] ?? $data['message'] ?? 'Failed to obtain access token',
                 $response->getStatusCode()
@@ -131,6 +136,8 @@ class OAuth
         $data = json_decode($body, true);
 
         if ($response->getStatusCode() >= 400 || ! isset($data['access_token'])) {
+            // Log the full response for debugging
+            error_log('OAuth refreshAccessToken failed: ' . $body);
             throw new ApiException(
                 $data['error_description'] ?? $data['message'] ?? 'Failed to refresh access token',
                 $response->getStatusCode()

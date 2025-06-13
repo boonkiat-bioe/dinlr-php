@@ -24,7 +24,7 @@ class Modifier extends AbstractResource
      * @return ModifierCollection
      * @throws ApiException
      */
-    public function list(string $locationId = null, string $restaurantId = null, array $params = []): ModifierCollection
+    public function list(?string $locationId = null, ?string $restaurantId = null, array $params = []): ModifierCollection
     {
         $path = $this->buildPath($restaurantId);
 
@@ -46,7 +46,7 @@ class Modifier extends AbstractResource
      * @return ModifierModel
      * @throws ApiException
      */
-    public function get(string $modifierId, string $restaurantId = null): ModifierModel
+    public function get(string $modifierId, ?string $restaurantId = null): ModifierModel
     {
         $path     = $this->buildPath($restaurantId, $modifierId);
         $response = $this->client->request('GET', $path);

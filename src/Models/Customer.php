@@ -410,6 +410,11 @@ class Customer extends AbstractModel
         return $data;
     }
 
+    public function toArray(): array
+    {
+        return $this->attributes;   
+    }
+
     /**
      * Get customer summary for display
      *
