@@ -40,10 +40,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Nava\\Laravel\\DinlrServiceProvider"
+                "Nava\\Dinlr\\Laravel\\DinlrServiceProvider"
             ],
             "aliases": {
-                "Dinlr": "Nava\\Laravel\\Facades\\Dinlr"
+                "Dinlr": "Nava\\Dinlr\\Laravel\\Facades\\Dinlr"
             }
         }
     },
