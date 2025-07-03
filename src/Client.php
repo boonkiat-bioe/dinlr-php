@@ -103,7 +103,7 @@ class Client
                 $options['json'] = $params;
             }
         }
-        echo "\nConfig: $method: " . json_encode($this->httpClient->getConfig()) . $endpoint . "\n";
+        // echo "\nConfig: $method: " . json_encode($this->httpClient->getConfig()) . $endpoint . "\n";
         try {
             $response = $this->httpClient->request($method, $endpoint, $options);
 

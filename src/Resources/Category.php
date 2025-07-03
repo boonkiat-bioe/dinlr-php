@@ -23,7 +23,7 @@ class Category extends AbstractResource
      * @return CategoryCollection
      * @throws ApiException
      */
-    public function list(string $restaurantId = null, array $params = []): CategoryCollection
+    public function list(?string $restaurantId = null, array $params = []): CategoryCollection
     {
         $path     = $this->buildPath($restaurantId);
         $response = $this->client->request('GET', $path, $params);

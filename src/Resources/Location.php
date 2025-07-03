@@ -26,7 +26,6 @@ class Location extends AbstractResource
     public function list(?string $restaurantId = null, array $params = []): LocationCollection
     {
         $path     = $this->buildPath($restaurantId);
-        echo "\nXlient: " . $path;
         $response = $this->client->request('GET', $path, $params);
 
         return new LocationCollection($response['data'] ?? []);
