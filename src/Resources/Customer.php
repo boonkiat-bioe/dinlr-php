@@ -69,7 +69,6 @@ class Customer extends AbstractResource
 
         // Validate and sanitize all at once
         $sanitizedData = $this->validateAndSanitizeArray($data, $rules);
-        echo "\nSanitized Data: " . print_r($sanitizedData, true);
 
         $path     = $this->buildPath($restaurantId);
         $response = $this->client->request('POST', $path, $sanitizedData);
