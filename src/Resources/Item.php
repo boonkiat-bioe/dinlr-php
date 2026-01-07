@@ -1,4 +1,5 @@
 <?php
+
 namespace Nava\Dinlr\Resources;
 
 use Nava\Dinlr\Contracts\ResourceInterface;
@@ -24,13 +25,20 @@ class Item extends AbstractResource implements ResourceInterface
     {
         $this->validatePagination($params);
 
-        // Add location_id to params if provided
         if (null !== $locationId) {
             $params['location_id'] = $locationId;
         }
 
         $path     = $this->buildPath($restaurantId);
         $response = $this->client->request('GET', $path, $params);
+
+        if (isset($response['errors'])) {
+            $status = $response['errors']['status'] ?? 500;
+            $detail = $response['errors']['detail'] ?? 'Unknown Dinlr API Error';
+
+            throw new ApiException($detail, $status);
+        }
+
         return new ItemCollection($response['data'] ?? []);
     }
 
